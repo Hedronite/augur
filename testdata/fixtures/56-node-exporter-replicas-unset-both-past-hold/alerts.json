@@ -1,0 +1,43 @@
+[
+  {
+    "labels": {
+      "alertname": "Watchdog",
+      "host": "host-a"
+    },
+    "startsAt": "2025-12-01T00:00:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:58:00Z",
+    "fingerprint": "0000watchdog",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "NodeExporterDown",
+      "host": "host-a",
+      "replica": "r1"
+    },
+    "startsAt": "2026-01-15T11:45:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:45:00Z",
+    "fingerprint": "nodeexporterdown",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "NodeExporterDown",
+      "host": "host-a",
+      "replica": "r2"
+    },
+    "startsAt": "2026-01-15T11:45:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:45:00Z",
+    "fingerprint": "nodeexporterdown",
+    "status": {
+      "state": "active"
+    }
+  }
+]

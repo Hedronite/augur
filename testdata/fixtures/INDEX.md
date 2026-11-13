@@ -23,7 +23,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 13. `alerts[]` sorts by `(host, name, starts_at)`; `reasons[]` and `replicas[]` sort ascending.
 14. Unknown alert fields are ignored (`64`); a reversed input order yields a byte-identical document (`65`).
 15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint. Every exit-4 fixture also declares `policy_schema`: `invalid` when the policy must fail `policy.v0.json` on its own, `valid` when only the engine can reject it (`79`, a regex that does not compile). `76` expects both offending field paths because `validate` reports every error, not just the first.
-16. `replicas:` declares the views whose alerts reach the source; unset means one unlabeled view. A declared replica absent from the input is **live and silent**, which splits the views (`54`), unless an active `PeerPrometheusDown`/`Absent` names it through `replica_label`, which makes it **lost** and lets a single past-hold report stand as RED (`55`).
+16. `replicas:` declares the views whose alerts reach the source; unset means one unlabeled view. A declared replica absent from the input is **live and silent**, which splits the views (`54`), unless an active `PeerPrometheusDown`/`Absent` names it through `replica_label`, which makes it **lost** and lets a single past-hold report stand as RED (`55`). When `replicas` is unset, `replica_label` values still appear in `replicas[]` but are ignored for agreement: the merged alert is one view, so past the hold it is RED `node_exporter_down_single_view` (`56`).
 17. Output bounds. The verdict schema is not run at runtime, so the decoder must enforce the same limits itself: `name` must match `^[A-Za-z_][A-Za-z0-9_:]{0,127}$`, otherwise it is reported as `unnamed`; `source_severity` must match `^[a-z][a-z0-9_]{0,31}$`, otherwise it is `null`; each `replicas[]` value must match `^[a-z0-9-]{1,32}$`, otherwise `unmapped`; `rule_id` is a policy id, already bounded by the policy schema. No other input string reaches the output.
 
 ## Fixtures
@@ -69,6 +69,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `77-policy-bad-duration` | validate | A duration outside the accepted grammar is an error naming the field | exit 4 invalid_policy |
 | `54-node-exporter-declared-replica-silent` | evaluate | A declared replica that is live and silent splits the views | YELLOW — (alerts raise) |
 | `55-node-exporter-declared-replica-lost` | evaluate | A declared replica that is lost does not block RED | RED — (alerts raise) |
+| `56-node-exporter-replicas-unset-both-past-hold` | evaluate | `replicas` unset: r1 and r2 labels are listed in `replicas[]` but ignored for agreement, so the merged alert is one view and past the hold is RED single_view | RED — (alerts raise) |
 | `66-default-red-unmatched` | evaluate | A RED default classifies an unmatched alert as RED | RED — (alerts raise) |
 | `67-unprocessed-treated-active` | evaluate | An unprocessed alert counts like an active one, so it raises | YELLOW — (alerts raise) |
 | `78-policy-unknown-rule-key` | evaluate | An unknown key nested in a rule is an error | exit 4 invalid_policy |
