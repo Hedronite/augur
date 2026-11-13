@@ -1,0 +1,22 @@
+{
+  "version": "4",
+  "groupKey": "{}:{alertname=\"Watchdog\"}",
+  "truncatedAlerts": 0,
+  "status": "firing",
+  "receiver": "augur",
+  "groupLabels": {
+    "alertname": "Watchdog"
+  },
+  "commonLabels": {
+    "alertname": "Watchdog"
+  },
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "Watchdog"
+      },
+      "startsAt": "2026-01-15T11:58:00Z"
+    }
+  ]
+}

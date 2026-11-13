@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hedronite/augur/schema/policy.v0.json",
+  "title": "augur policy v0",
+  "description": "Watch rules for Augur. Unknown keys are errors. GREEN is unrepresentable as an outcome: a policy can only raise severity, and the default may not be GREEN.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "default", "watchdog", "rules"],
+  "properties": {
+    "schema": { "const": "augur.policy/v0" },
+    "default": {
+      "enum": ["YELLOW", "RED"],
+      "description": "Applied to any alert no rule matches. GREEN is rejected."
+    },
+    "host_label": {
+      "type": "string",
+      "minLength": 1,
+      "default": "host",
+      "description": "Label carrying the host slug. Falls back to instance."
+    },
+    "replica_label": {
+      "type": "string",
+      "minLength": 1,
+      "default": "replica",
+      "description": "Label carrying the primary/secondary identity used by the two-view rules."
+    },
+    "watchdog": { "$ref": "#/$defs/watchdog" },
+    "node_exporter_red_hold": {
+      "$ref": "#/$defs/duration",
+      "description": "Age at which a first-class host's NodeExporterDown escalates. Default 10m."
+    },
+    "first_class_hosts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/host" },
+      "uniqueItems": true
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rule" }
+    },
+    "holds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hold" }
+    }
+  },
+  "$defs": {
+    "host": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{1,32}$"
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^[0-9]+(s|m|h)$",
+      "description": "Deliberately narrower than Go's ParseDuration: whole seconds, minutes or hours."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "matcher": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["regex"],
+          "properties": { "regex": { "type": "string", "minLength": 1 } }
+        }
+      ]
+    },
+    "match": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/matcher" },
+      "description": "Label equality, or {regex: ...}. Every key must match. No CEL, no policy in Go."
+    },
+    "watchdog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alertname"],
+      "properties": {
+        "alertname": { "type": "string", "minLength": 1 },
+        "deadman_window": {
+          "$ref": "#/$defs/duration",
+          "description": "How long the heartbeat may be absent before observability_blind. Default 5m."
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "match", "severity"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "match": { "$ref": "#/$defs/match" },
+        "severity": { "enum": ["YELLOW", "RED"] },
+        "escalate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["to", "after", "hosts"],
+          "properties": {
+            "to": { "const": "RED" },
+            "after": {
+              "oneOf": [
+                { "$ref": "#/$defs/duration" },
+                { "const": "node_exporter_red_hold" }
+              ]
+            },
+            "hosts": { "enum": ["first_class", "all"] }
+          }
+        }
+      }
+    },
+    "hold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "match", "kind"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "match": { "$ref": "#/$defs/match" },
+        "kind": { "enum": ["expected_dark", "known_hold", "announced_dark"] },
+        "expires_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "announced_dark" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "required": ["expires_at"],
+            "properties": { "expires_at": { "type": "string", "format": "date-time" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "enum": ["expected_dark", "known_hold"] } },
+            "required": ["kind"]
+          },
+          "then": { "properties": { "expires_at": false } }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "flag",
+  "overall": "YELLOW",
+  "policy_sha256": "b7f1fe1bbea7192242367d18b20f37b7ccd2770678506c4845345277ff6ec048",
+  "reasons": [],
+  "watchdog": {
+    "seen": true,
+    "last_seen": "2026-01-15T11:58:00Z"
+  },
+  "sources": [
+    {
+      "id": "file",
+      "state": "ok",
+      "last_ok": "2026-01-15T12:00:00Z",
+      "alert_count": 3
+    }
+  ],
+  "alerts": [
+    {
+      "name": "NodeExporterDown",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T11:45:00Z",
+      "replicas": [
+        "r1",
+        "r2"
+      ],
+      "rule_id": "node-exporter-down",
+      "reasons": [
+        "node_exporter_within_hold",
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Watchdog",
+      "host": "host-a",
+      "severity": "GREEN",
+      "source_severity": null,
+      "expected": true,
+      "status": "active",
+      "starts_at": "2025-12-01T00:00:00Z",
+      "replicas": [],
+      "rule_id": null,
+      "reasons": [
+        "heartbeat"
+      ]
+    }
+  ]
+}

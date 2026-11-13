@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hedronite/augur/schema/am-alerts.v2.json",
+  "title": "Alertmanager v2 alerts array",
+  "description": "The body of GET /api/v2/alerts, as saved to a file and passed to evaluate. Unknown fields are ignored so Alertmanager upgrades do not break the decoder; the overall shape must still match.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["labels", "startsAt", "status"],
+    "properties": {
+      "labels": {
+        "type": "object",
+        "description": "Alert label set. alertname is required; every label value is a string.",
+        "required": ["alertname"],
+        "properties": {
+          "alertname": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": { "type": "string" }
+      },
+      "annotations": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "startsAt": {
+        "type": "string",
+        "format": "date-time",
+        "description": "RFC3339. Never the zero time on a real alert."
+      },
+      "endsAt": {
+        "type": "string",
+        "format": "date-time",
+        "description": "RFC3339. Alertmanager's unresolved sentinel 0001-01-01T00:00:00Z is valid here."
+      },
+      "updatedAt": { "type": "string", "format": "date-time" },
+      "fingerprint": { "type": "string" },
+      "generatorURL": { "type": "string" },
+      "status": {
+        "type": "object",
+        "required": ["state"],
+        "properties": {
+          "state": {
+            "enum": ["active", "suppressed", "unprocessed"],
+            "description": "unprocessed is a transient Alertmanager startup state and is classified as active."
+          },
+          "silencedBy": { "type": "array", "items": { "type": "string" } },
+          "inhibitedBy": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "additionalProperties": true
+  }
+}
