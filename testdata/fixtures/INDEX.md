@@ -23,6 +23,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 13. `alerts[]` sorts by `(host, name, starts_at)`; `reasons[]` and `replicas[]` sort ascending.
 14. Unknown alert fields are ignored (`64`); a reversed input order yields a byte-identical document (`65`).
 15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint; `76` expects both offending field paths because `validate` reports every error, not just the first.
+16. Output bounds. The verdict schema is not run at runtime, so the decoder must enforce the same limits itself: `name` must match `^[A-Za-z_][A-Za-z0-9_:]{0,127}$`, otherwise it is reported as `unnamed`; `source_severity` must match `^[a-z][a-z0-9_]{0,31}$`, otherwise it is `null`; each `replicas[]` value must match `^[a-z0-9-]{1,32}$`, otherwise it is `unmapped`; `rule_id` is a policy id, already bounded by the policy schema. No other input string reaches the output.
 
 ## Fixtures
 

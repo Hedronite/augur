@@ -218,6 +218,19 @@ func TestFixturesConform(t *testing.T) {
 				if !codePattern.MatchString(e.Code) {
 					t.Errorf("expected_error.json: code %q is not a snake_case code", e.Code)
 				}
+				if e.Exit == 4 {
+					// Policy errors: the policy must not conform, so the fixture keeps pinning something.
+					var doc any
+					if err := yaml.Unmarshal(policy, &doc); err == nil {
+						j, err := json.Marshal(doc)
+						if err != nil {
+							t.Fatalf("marshal policy: %v", err)
+						}
+						if s.policy.Validate(parseJSON(t, j)) == nil {
+							t.Errorf("exit-4 fixture has a policy.yaml that policy.v0.json accepts")
+						}
+					}
+				}
 				if e.Exit == 3 {
 					// Input errors: the alerts file must not be a valid AM v2 array.
 					if v, err := jsonschema.UnmarshalJSON(bytes.NewReader(alerts)); err == nil {
