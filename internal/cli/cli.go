@@ -50,8 +50,13 @@ func newRoot() *cobra.Command {
 		Use:           "augur",
 		Short:         "Classify Alertmanager alerts as GREEN, YELLOW or RED",
 		Long:          "Augur reads alerts from Prometheus Alertmanager and classifies them as GREEN, YELLOW or RED, with machine-readable reasons. It only advises: it never silences, acknowledges or routes alerts.",
+		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		// A bare "augur" must not exit 0: that would read as GREEN with no verdict.
+		RunE: func(*cobra.Command, []string) error {
+			return &exitError{code: ExitConfig, msg: "no command given; run 'augur --help' for usage"}
+		},
 	}
 	root.AddCommand(newEvaluate(), newValidate(), newServe(), newVersion())
 	return root

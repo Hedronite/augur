@@ -150,8 +150,8 @@
       "properties": {
         "name": {
           "type": "string",
-          "minLength": 1,
-          "description": "The alertname label value."
+          "pattern": "^[A-Za-z_][A-Za-z0-9_:]{0,127}$",
+          "description": "The alertname label value. A value that is not a valid Prometheus identifier of at most 128 characters is reported as the literal \"unnamed\"; raw label values are never echoed."
         },
         "host": {
           "type": "string",
@@ -164,7 +164,8 @@
         },
         "source_severity": {
           "type": ["string", "null"],
-          "description": "The alert's own severity label, or null when absent. Never trusted: Augur assigns severity from policy."
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "description": "The alert's own severity label, or null when absent or not a short lowercase identifier. Never trusted: Augur assigns severity from policy."
         },
         "expected": {
           "type": "boolean",
@@ -182,13 +183,15 @@
         "replicas": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,32}$"
           },
           "uniqueItems": true,
-          "description": "Replica label values reporting this alert; the engine keys two-view rules on them. Sorted."
+          "description": "Replica label values reporting this alert; the engine keys two-view rules on them. Sorted. A value that is not a slug is reported as the literal \"unmapped\"."
         },
         "rule_id": {
           "type": ["string", "null"],
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
           "description": "The id of the matching policy rule, or null when no rule matched."
         },
         "reasons": {

@@ -81,6 +81,20 @@ func TestUsageErrorsExitConfig(t *testing.T) {
 	}
 }
 
+// A bare invocation has no verdict, so it must not exit 0 (GREEN). --help may.
+func TestBareInvocationIsNotGreen(t *testing.T) {
+	code, out, errs := run(t)
+	if code != ExitConfig {
+		t.Errorf("bare augur: exit = %d, want %d (stderr %q)", code, ExitConfig, errs)
+	}
+	if out != "" {
+		t.Errorf("bare augur: stdout %q, want empty", out)
+	}
+	if code, _, _ := run(t, "--help"); code != 0 {
+		t.Errorf("--help: exit = %d, want 0", code)
+	}
+}
+
 // A panic must never surface as exit 2, which would read as RED.
 func TestPanicExitsInternal(t *testing.T) {
 	root := &cobra.Command{Use: "augur", RunE: func(*cobra.Command, []string) error { panic("boom") }}
