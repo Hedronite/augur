@@ -1,0 +1,53 @@
+{
+  "schema": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "flag",
+  "overall": "GREEN",
+  "policy_sha256": "b18fd077c9eb4cb411beee70eb624dac81cf45c815ba245f491eb1f1e9620d70",
+  "reasons": [
+    "watchdog_only"
+  ],
+  "watchdog": {
+    "seen": true,
+    "last_seen": "2026-01-15T11:58:00Z"
+  },
+  "sources": [
+    {
+      "id": "file",
+      "state": "ok",
+      "last_ok": "2026-01-15T12:00:00Z",
+      "alert_count": 2
+    }
+  ],
+  "alerts": [
+    {
+      "name": "SSHFailure",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": true,
+      "status": "active",
+      "starts_at": "2026-01-15T11:50:00Z",
+      "replicas": [],
+      "rule_id": "ssh-failure",
+      "reasons": [
+        "held_known",
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Watchdog",
+      "host": "host-a",
+      "severity": "GREEN",
+      "source_severity": null,
+      "expected": true,
+      "status": "active",
+      "starts_at": "2025-12-01T00:00:00Z",
+      "replicas": [],
+      "rule_id": null,
+      "reasons": [
+        "heartbeat"
+      ]
+    }
+  ]
+}

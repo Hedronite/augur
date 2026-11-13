@@ -1,0 +1,15 @@
+[
+  {
+    "labels": {
+      "alertname": "NodeExporterDown",
+      "host": "host-a"
+    },
+    "startsAt": "2026-01-15T11:57:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:57:00Z",
+    "fingerprint": "nodeexporterdown",
+    "status": {
+      "state": "active"
+    }
+  }
+]

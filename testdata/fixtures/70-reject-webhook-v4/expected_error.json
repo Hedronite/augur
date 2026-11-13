@@ -1,0 +1,5 @@
+{
+  "exit": 3,
+  "code": "unsupported_payload",
+  "detail": "alertmanager_webhook_v4"
+}

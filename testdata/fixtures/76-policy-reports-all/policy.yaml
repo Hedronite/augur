@@ -1,0 +1,45 @@
+schema: augur.policy/v0
+default: GREEN
+host_label: host
+watchdog:
+  alertname: Watchdog
+  deadman_window: 5m
+node_exporter_red_hold: 10 minutes
+first_class_hosts:
+  - host-a
+  - host-b
+  - host-c
+  - host-d
+rules:
+  - id: peer-prom-down
+    match:
+      alertname: PeerPrometheusDown
+    severity: YELLOW
+  - id: peer-prom-absent
+    match:
+      alertname: PeerPrometheusAbsent
+    severity: YELLOW
+  - id: node-exporter-down
+    match:
+      alertname: NodeExporterDown
+    severity: YELLOW
+    escalate:
+      to: RED
+      after: node_exporter_red_hold
+      hosts: first_class
+  - id: ssh-failure
+    match:
+      alertname: SSHFailure
+    severity: YELLOW
+  - id: disk-warn
+    match:
+      alertname: DiskSpaceWarning
+      host:
+        regex: host-[ab]
+    severity: YELLOW
+  - id: disk-crit
+    match:
+      alertname: DiskSpaceCritical
+      host:
+        regex: host-[ab]
+    severity: YELLOW

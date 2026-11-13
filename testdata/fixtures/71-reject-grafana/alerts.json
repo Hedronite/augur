@@ -1,0 +1,21 @@
+{
+  "receiver": "augur",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "PeerPrometheusDown",
+        "host": "host-b"
+      },
+      "annotations": {
+        "summary": "s"
+      },
+      "startsAt": "2026-01-15T11:20:00Z",
+      "values": {
+        "B": 0
+      },
+      "valueString": "[ var='B' labels={} value=0 ]"
+    }
+  ]
+}

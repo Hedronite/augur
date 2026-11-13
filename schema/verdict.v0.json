@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hedronite/augur/schema/verdict.v0.json",
+  "title": "augur.verdict/v0",
+  "description": "The Augur verdict document. Output is sorted and stable: the same input and the same --now produce byte-identical output. alerts[] is sorted by (host, name, starts_at); reasons[] and replicas[] are sorted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generated_at",
+    "time_source",
+    "overall",
+    "policy_sha256",
+    "reasons",
+    "watchdog",
+    "sources",
+    "alerts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "augur.verdict/v0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 UTC instant at which the verdict was produced."
+    },
+    "time_source": {
+      "enum": ["flag", "wall"],
+      "description": "flag: an explicit --now was supplied; wall: the process clock (evaluate without --now, or serve's injected clock). The engine itself never reads a clock."
+    },
+    "overall": {
+      "$ref": "#/$defs/severity"
+    },
+    "policy_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase hex SHA-256 of the exact bytes of the policy that produced this verdict."
+    },
+    "reasons": {
+      "$ref": "#/$defs/reasons",
+      "description": "Top-level rollup: heartbeat and source state codes. Alert-driven causes are detailed on each alert in alerts[].reasons[]."
+    },
+    "watchdog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seen", "last_seen"],
+      "properties": {
+        "seen": {
+          "type": "boolean",
+          "description": "true when a Watchdog heartbeat is present in the snapshot. An empty input array counts as not seen."
+        },
+        "last_seen": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "updatedAt of the Watchdog alert, RFC3339 UTC, or null when not seen. A silenced Watchdog still counts as a heartbeat."
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "alerts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/alert"
+      }
+    }
+  },
+  "$defs": {
+    "severity": {
+      "enum": ["GREEN", "YELLOW", "RED"],
+      "description": "The shared verdict vocabulary. GREEN requires a Watchdog heartbeat."
+    },
+    "reason": {
+      "enum": [
+        "announced_dark_expired",
+        "clock_skew",
+        "held_announced_dark",
+        "held_expected_dark",
+        "held_known",
+        "heartbeat",
+        "inhibited",
+        "node_exporter_down_both_views",
+        "node_exporter_down_single_view",
+        "node_exporter_within_hold",
+        "observability_blind",
+        "rule_matched",
+        "silenced",
+        "source_stale",
+        "source_unreachable",
+        "unmatched_default",
+        "unmapped_host",
+        "watchdog_missing",
+        "watchdog_only"
+      ],
+      "description": "Closed enum of Augur reason codes. Shared across the top-level rollup and per-alert reasons; see docs/reasons.md. Extend only through the A0 contract."
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reason"
+      },
+      "uniqueItems": true
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "state", "last_ok", "alert_count"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source identifier. For evaluate this is \"file\"; for serve it is the configured source id."
+        },
+        "state": {
+          "enum": ["ok", "unreachable", "stale"],
+          "description": "ok: reached this cycle; unreachable: could not be reached; stale: reached but not producing current data."
+        },
+        "last_ok": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "RFC3339 UTC instant of the last successful read, or null when never ok."
+        },
+        "alert_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of alerts read from this source."
+        }
+      }
+    },
+    "alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "host",
+        "severity",
+        "source_severity",
+        "expected",
+        "status",
+        "starts_at",
+        "replicas",
+        "rule_id",
+        "reasons"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The alertname label value."
+        },
+        "host": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]{1,32}$",
+          "description": "Host slug, or the literal value \"unmapped\" when the host label is missing or does not match the slug pattern. Raw label values are never echoed."
+        },
+        "severity": {
+          "$ref": "#/$defs/severity",
+          "description": "Augur's classification after holds, escalation and exemptions; may differ from source_severity."
+        },
+        "source_severity": {
+          "type": ["string", "null"],
+          "description": "The alert's own severity label, or null when absent. Never trusted: Augur assigns severity from policy."
+        },
+        "expected": {
+          "type": "boolean",
+          "description": "true when the alert is exempted (the Watchdog heartbeat or a matched hold) and never raises overall."
+        },
+        "status": {
+          "enum": ["active", "suppressed"],
+          "description": "Alertmanager state, collapsed: suppressed covers silenced and inhibited alerts. Suppressed alerts are still shown and do not raise overall; a suppressed Watchdog still counts as a heartbeat."
+        },
+        "starts_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC3339 UTC start of the alert. Hold age is now - starts_at, clamped at 0; a negative value adds clock_skew."
+        },
+        "replicas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Replica label values reporting this alert; the engine keys two-view rules on them. Sorted."
+        },
+        "rule_id": {
+          "type": ["string", "null"],
+          "description": "The id of the matching policy rule, or null when no rule matched."
+        },
+        "reasons": {
+          "$ref": "#/$defs/reasons"
+        }
+      }
+    }
+  }
+}

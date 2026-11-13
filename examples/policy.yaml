@@ -1,0 +1,47 @@
+# Example Augur policy. Alert names follow the real rule set; hosts are synthetic.
+# The real policy lives off-repo on the deploy host (mode 0640).
+schema: augur.policy/v0
+default: YELLOW                 # severity for an alert no rule matches; GREEN is rejected
+host_label: host                # label that carries the host slug (falls back to instance)
+replica_label: replica          # label that names the Prometheus replica (two-view rules)
+watchdog:
+  alertname: Watchdog
+  deadman_window: 5m            # used by `serve` only
+node_exporter_red_hold: 10m
+first_class_hosts: [host-a, host-b, host-c, host-d]
+
+# Every matching rule applies; the worst severity wins.
+# A matcher value is a string (label equality) or { regex: "..." } (anchored regex).
+rules:
+  - id: peer-prom-down
+    match: { alertname: PeerPrometheusDown }
+    severity: YELLOW
+  - id: peer-prom-absent
+    match: { alertname: PeerPrometheusAbsent }
+    severity: YELLOW
+  - id: node-exporter-down
+    match: { alertname: NodeExporterDown }
+    severity: YELLOW
+    escalate: { to: RED, after: node_exporter_red_hold, hosts: first_class }
+  - id: ssh-failure
+    match: { alertname: SSHFailure }
+    severity: YELLOW
+  - id: disk-warn
+    match: { alertname: DiskSpaceWarning, host: { regex: "host-[ab]" } }
+    severity: YELLOW
+  - id: disk-crit
+    match: { alertname: DiskSpaceCritical, host: { regex: "host-[ab]" } }
+    severity: YELLOW
+
+# Alerts that are expected. They never raise the overall verdict.
+holds:
+  - id: kube-api-dark
+    match: { port: "6443" }
+    kind: expected_dark
+  - id: legacy-forward-dark
+    match: { port: "18080" }
+    kind: known_hold
+  - id: maint-host-e
+    match: { host: host-e }
+    kind: announced_dark
+    expires_at: 2026-12-01T00:00:00Z
