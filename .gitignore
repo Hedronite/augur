@@ -36,3 +36,8 @@ go.work.sum
 # Augur build output
 /augur
 /dist/
+
+# Augur build output
+/augur
+/augur-*
+/dist/
