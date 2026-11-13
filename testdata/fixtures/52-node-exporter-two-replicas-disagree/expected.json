@@ -3,7 +3,7 @@
   "generated_at": "2026-01-15T12:00:00Z",
   "time_source": "flag",
   "overall": "YELLOW",
-  "policy_sha256": "b7f1fe1bbea7192242367d18b20f37b7ccd2770678506c4845345277ff6ec048",
+  "policy_sha256": "242dd46ee0f6f82db53e12c64eb4c7145ccfaf7ca4f2c36ba3d52bf8caae9b0c",
   "reasons": [],
   "watchdog": {
     "seen": true,
