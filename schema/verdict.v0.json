@@ -86,6 +86,7 @@
         "inhibited",
         "node_exporter_down_both_views",
         "node_exporter_down_single_view",
+        "node_exporter_views_split",
         "node_exporter_within_hold",
         "observability_blind",
         "rule_matched",

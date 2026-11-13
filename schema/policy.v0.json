@@ -24,6 +24,13 @@
       "default": "replica",
       "description": "Label carrying the primary/secondary identity used by the two-view rules."
     },
+    "replicas": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/host" },
+      "description": "Views whose alerts reach this source, read from replica_label. Unset means one unlabeled view (single-view mode); an empty list is a configuration error, not a synonym for unset."
+    },
     "watchdog": { "$ref": "#/$defs/watchdog" },
     "node_exporter_red_hold": {
       "$ref": "#/$defs/duration",
@@ -36,8 +43,8 @@
     },
     "rules": {
       "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/rule" }
+      "items": { "$ref": "#/$defs/rule" },
+      "description": "May be empty: a policy with only a default is valid."
     },
     "holds": {
       "type": "array",

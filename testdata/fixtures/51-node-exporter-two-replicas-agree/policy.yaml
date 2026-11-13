@@ -43,3 +43,6 @@ rules:
       host:
         regex: host-[ab]
     severity: YELLOW
+replicas:
+  - r1
+  - r2
