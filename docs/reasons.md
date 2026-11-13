@@ -28,11 +28,32 @@ per-alert reasons.
 | `announced_dark_expired` | YELLOW | An announced dark whose `expires_at` has passed; the exemption is over. |
 | `silenced` | exempt | The alert is silenced in Alertmanager; shown but does not raise `overall`. |
 | `inhibited` | exempt | The alert is inhibited; shown but does not raise `overall`. |
-| `node_exporter_within_hold` | YELLOW | Unexpected `NodeExporterDown` before `node_exporter_red_hold` has elapsed. |
-| `node_exporter_down_single_view` | RED | A first-class host's `NodeExporterDown` is still active past the hold, reported by one view. |
-| `node_exporter_down_both_views` | RED | The same, confirmed by both views. Once two replicas report, both must agree before RED. |
+| `node_exporter_within_hold` | YELLOW | Unexpected `NodeExporterDown`: every reporting replica reports it, and the merged age is within `node_exporter_red_hold`. |
+| `node_exporter_down_single_view` | RED | A first-class host's `NodeExporterDown` is still active past its hold as seen by one view: single-replica mode, or a declared replica that does not report it because it is lost, with every reporting replica past the hold. A lost replica does not block RED. |
+| `node_exporter_down_both_views` | RED | The same alert confirmed: every declared replica reports it and the merged age is past the hold. |
+| `node_exporter_views_split` | YELLOW | A declared replica is live and does not report the alert while another replica does. A path problem on one side alone, with a healthy peer, stays YELLOW. |
 | `clock_skew` | state | The alert's `starts_at` is in the future; hold age is clamped at 0. |
 | `unmapped_host` | state | The host label is missing or is not a valid slug (`^[a-z0-9-]{1,32}$`); the alert's `host` field is the literal value `unmapped`. Raw label values are never echoed. |
+
+## The replicas rule
+
+The optional policy key `replicas: [slug, …]` lists the views whose alerts reach
+Augur's source, read from the label named by `replica_label`. If `replicas` is
+unset, there is one unlabeled view (single-replica mode).
+
+- A merged alert's `starts_at` is the **latest** start among the replicas reporting
+  it: the moment all of them agreed. So `age = now − starts_at` stays truthful.
+- A replica is **lost** when a `PeerPrometheusDown`/`PeerPrometheusAbsent` alert is
+  active whose `replica_label` value names it. A lost replica never blocks RED.
+- Case table:
+
+  | Case | Verdict |
+  | --- | --- |
+  | Single view, past the hold | RED `node_exporter_down_single_view` |
+  | Every declared replica reports it, merged age past the hold | RED `node_exporter_down_both_views` |
+  | Every reporting replica reports it, merged age within the hold | YELLOW `node_exporter_within_hold` |
+  | A declared replica is live and does not report it while another does | YELLOW `node_exporter_views_split` |
+  | A declared replica is lost, and every reporting replica is past the hold | RED `node_exporter_down_single_view` |
 
 ## Semantics
 
