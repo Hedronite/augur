@@ -125,3 +125,26 @@ jobs:
             fi
           done
           exit "$fail"
+
+  # TODO(A1): enable once the fuzz targets exist. Go runs one -fuzz target per
+  # invocation, so this is a matrix job, about 30 s per target on pull requests;
+  # a longer run belongs in a separate nightly workflow.
+  #
+  # Targets: FuzzDecodeAM, FuzzSniff, FuzzPolicyParse, FuzzEvaluate.
+  #
+  # fuzz:
+  #   name: fuzz (${{ matrix.target }})
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target: [FuzzDecodeAM, FuzzSniff, FuzzPolicyParse, FuzzEvaluate]
+  #   steps:
+  #     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  #       with:
+  #         persist-credentials: false
+  #     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+  #       with:
+  #         go-version: stable
+  #     - run: go test ./internal/... -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime 30s
