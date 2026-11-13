@@ -4,6 +4,8 @@ schema: augur.policy/v0
 default: YELLOW                 # severity for an alert no rule matches; GREEN is rejected
 host_label: host                # label that carries the host slug (falls back to instance)
 replica_label: replica          # label that names the Prometheus replica (two-view rules)
+replicas: [r1, r2]              # views whose alerts reach the source; unset means one unlabeled view
+                                # set here for illustration; the deployed policy leaves it unset (single view)
 watchdog:
   alertname: Watchdog
   deadman_window: 5m            # used by `serve` only

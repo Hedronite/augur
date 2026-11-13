@@ -1,0 +1,69 @@
+{
+  "schema": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "flag",
+  "overall": "RED",
+  "policy_sha256": "242dd46ee0f6f82db53e12c64eb4c7145ccfaf7ca4f2c36ba3d52bf8caae9b0c",
+  "reasons": [],
+  "watchdog": {
+    "seen": true,
+    "last_seen": "2026-01-15T11:58:00Z"
+  },
+  "sources": [
+    {
+      "id": "file",
+      "state": "ok",
+      "last_ok": "2026-01-15T12:00:00Z",
+      "alert_count": 3
+    }
+  ],
+  "alerts": [
+    {
+      "name": "NodeExporterDown",
+      "host": "host-a",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T11:45:00Z",
+      "replicas": [
+        "r1"
+      ],
+      "rule_id": "node-exporter-down",
+      "reasons": [
+        "node_exporter_down_single_view",
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Watchdog",
+      "host": "host-a",
+      "severity": "GREEN",
+      "source_severity": null,
+      "expected": true,
+      "status": "active",
+      "starts_at": "2025-12-01T00:00:00Z",
+      "replicas": [],
+      "rule_id": null,
+      "reasons": [
+        "heartbeat"
+      ]
+    },
+    {
+      "name": "PeerPrometheusDown",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T11:20:00Z",
+      "replicas": [
+        "r2"
+      ],
+      "rule_id": "peer-prom-down",
+      "reasons": [
+        "rule_matched"
+      ]
+    }
+  ]
+}

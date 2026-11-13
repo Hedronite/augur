@@ -167,6 +167,10 @@ type expectedError struct {
 	Exit   int    `json:"exit"`
 	Code   string `json:"code"`
 	Detail string `json:"detail"`
+	// PolicySchema is required on exit-4 fixtures: "invalid" when policy.yaml must fail
+	// policy.v0.json on its own, "valid" when only the engine can reject it (for example
+	// a regex that does not compile).
+	PolicySchema string `json:"policy_schema"`
 }
 
 var codePattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
@@ -219,17 +223,25 @@ func TestFixturesConform(t *testing.T) {
 					t.Errorf("expected_error.json: code %q is not a snake_case code", e.Code)
 				}
 				if e.Exit == 4 {
-					// Policy errors: the policy must not conform, so the fixture keeps pinning something.
+					if e.PolicySchema != "valid" && e.PolicySchema != "invalid" {
+						t.Errorf("exit-4 fixture must set policy_schema to valid or invalid, got %q", e.PolicySchema)
+					}
 					var doc any
 					if err := yaml.Unmarshal(policy, &doc); err == nil {
 						j, err := json.Marshal(doc)
 						if err != nil {
 							t.Fatalf("marshal policy: %v", err)
 						}
-						if s.policy.Validate(parseJSON(t, j)) == nil {
-							t.Errorf("exit-4 fixture has a policy.yaml that policy.v0.json accepts")
+						ok := s.policy.Validate(parseJSON(t, j)) == nil
+						if e.PolicySchema == "invalid" && ok {
+							t.Errorf("policy_schema is invalid but policy.v0.json accepts policy.yaml")
+						}
+						if e.PolicySchema == "valid" && !ok {
+							t.Errorf("policy_schema is valid but policy.v0.json rejects policy.yaml")
 						}
 					}
+				} else if e.PolicySchema != "" {
+					t.Errorf("policy_schema only belongs on exit-4 fixtures")
 				}
 				if e.Exit == 3 {
 					// Input errors: the alerts file must not be a valid AM v2 array.

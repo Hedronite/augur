@@ -1,5 +1,6 @@
 {
   "exit": 4,
   "code": "invalid_policy",
-  "detail": "default,node_exporter_red_hold"
+  "detail": "default,node_exporter_red_hold",
+  "policy_schema": "invalid"
 }

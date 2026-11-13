@@ -17,13 +17,14 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 7. `expected: true` means "excused right now": the Watchdog and alerts under an active hold. An announced dark past `expires_at` is `expected: false` and raises (`23`).
 8. `severity` is Augur's classified severity; `source_severity` is the alert's own `severity` label or `null`. `status` is `active` or `suppressed`.
 9. `overall` is the worst severity among alerts that are neither expected nor suppressed, floored at `YELLOW` when the heartbeat is missing (`12`).
-10. Alerts that share `(name, host)` across replica labels merge into one entry: `replicas[]` is the sorted distinct set, `starts_at` is the earliest, severity is the worst (`51`, `52`).
+10. Alerts that share `(name, host)` across replica labels merge into one entry: `replicas[]` is the sorted distinct set of views that reported, `starts_at` is the **latest** reporting start (the moment every reporting view agreed, so age stays truthful), and severity is the worst (`51`, `52`).
 11. `host` is `labels[host_label]`, falling back to `labels.instance`. A value failing `^[a-z0-9-]{1,32}$` becomes `unmapped` with reason `unmapped_host`, and an unmapped host is never first-class, so it never escalates (`61`).
-12. Age is `now - startsAt`, clamped at 0; a negative age adds `clock_skew` (`62`).
+12. Age is `now - startsAt`, clamped at 0; a negative age adds `clock_skew` (`62`). For a merged alert the age is measured from the merged `starts_at`, so the hold reasons follow the latest reporting start: `node_exporter_within_hold` only appears while that merged age is inside `node_exporter_red_hold` (`52`).
 13. `alerts[]` sorts by `(host, name, starts_at)`; `reasons[]` and `replicas[]` sort ascending.
 14. Unknown alert fields are ignored (`64`); a reversed input order yields a byte-identical document (`65`).
-15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint; `76` expects both offending field paths because `validate` reports every error, not just the first.
-16. Output bounds. The verdict schema is not run at runtime, so the decoder must enforce the same limits itself: `name` must match `^[A-Za-z_][A-Za-z0-9_:]{0,127}$`, otherwise it is reported as `unnamed`; `source_severity` must match `^[a-z][a-z0-9_]{0,31}$`, otherwise it is `null`; each `replicas[]` value must match `^[a-z0-9-]{1,32}$`, otherwise it is `unmapped`; `rule_id` is a policy id, already bounded by the policy schema. No other input string reaches the output.
+15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint. Every exit-4 fixture also declares `policy_schema`: `invalid` when the policy must fail `policy.v0.json` on its own, `valid` when only the engine can reject it (`79`, a regex that does not compile). `76` expects both offending field paths because `validate` reports every error, not just the first.
+16. `replicas:` declares the views whose alerts reach the source; unset means one unlabeled view. A declared replica absent from the input is **live and silent**, which splits the views (`54`), unless an active `PeerPrometheusDown`/`Absent` names it through `replica_label`, which makes it **lost** and lets a single past-hold report stand as RED (`55`).
+17. Output bounds. The verdict schema is not run at runtime, so the decoder must enforce the same limits itself: `name` must match `^[A-Za-z_][A-Za-z0-9_:]{0,127}$`, otherwise it is reported as `unnamed`; `source_severity` must match `^[a-z][a-z0-9_]{0,31}$`, otherwise it is `null`; each `replicas[]` value must match `^[a-z0-9-]{1,32}$`, otherwise `unmapped`; `rule_id` is a policy id, already bounded by the policy schema. No other input string reaches the output.
 
 ## Fixtures
 
@@ -50,7 +51,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `46-orb-dark-not-yellow` | evaluate | A peer absence that is expected dark is not YELLOW | GREEN — watchdog_only |
 | `50-node-exporter-past-hold-single-view` | evaluate | First-class NodeExporterDown past the hold, one view, is RED | RED — (alerts raise) |
 | `51-node-exporter-two-replicas-agree` | evaluate | Two views that agree past the hold are RED | RED — (alerts raise) |
-| `52-node-exporter-two-replicas-disagree` | evaluate | Two views that disagree are not RED; both must agree | YELLOW — (alerts raise) |
+| `52-node-exporter-two-replicas-disagree` | evaluate | Two views that disagree are not RED; the merged age is the latest reporting start | YELLOW — (alerts raise) |
 | `53-worst-rule-wins` | evaluate | Every matching rule applies; worst severity wins and rule_id names the deciding rule | RED — (alerts raise) |
 | `60-unmatched-alert` | evaluate | An unmatched alert takes the fail-closed default; source_severity is preserved | YELLOW — (alerts raise) |
 | `61-unmapped-host` | evaluate | A host label that fails the slug pattern is reported unmapped and never escalates | YELLOW — (alerts raise) |
@@ -66,6 +67,12 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `75-policy-unknown-key` | evaluate | Unknown policy keys are errors | exit 4 invalid_policy |
 | `76-policy-reports-all` | validate | validate reports every policy error, not just the first | exit 4 invalid_policy |
 | `77-policy-bad-duration` | validate | A duration outside the accepted grammar is an error naming the field | exit 4 invalid_policy |
+| `54-node-exporter-declared-replica-silent` | evaluate | A declared replica that is live and silent splits the views | YELLOW — (alerts raise) |
+| `55-node-exporter-declared-replica-lost` | evaluate | A declared replica that is lost does not block RED | RED — (alerts raise) |
+| `66-default-red-unmatched` | evaluate | A RED default classifies an unmatched alert as RED | RED — (alerts raise) |
+| `67-unprocessed-treated-active` | evaluate | An unprocessed alert counts like an active one, so it raises | YELLOW — (alerts raise) |
+| `78-policy-unknown-rule-key` | evaluate | An unknown key nested in a rule is an error | exit 4 invalid_policy |
+| `79-policy-bad-regex` | validate | A matcher regex that does not compile is a policy error; the schema cannot see it, so validate must compile it | exit 4 invalid_policy |
 
 ## Coverage against §5
 
@@ -90,6 +97,14 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `instance` fallback | `63` |
 | Hold age, clamp and `clock_skew` | `62`, plus every hold fixture |
 | Worst matching rule wins | `53` |
+| RED default applies to an unmatched alert | `66` |
+| `unprocessed` is classified like `active` | `67` |
+| Every declared replica reports past the merged hold | `51` |
+| Merged age within the hold | `52` |
+| A declared replica is live and silent | `54` |
+| A declared replica is lost and does not block RED | `55` |
+| Unknown key nested in a rule | `78` |
+| A matcher regex that does not compile | `79` |
 | Unknown fields ignored | `64` |
 | Determinism under reordering | `65` |
 | Reject webhook v4 / Grafana | `70`, `71` |

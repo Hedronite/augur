@@ -1,0 +1,18 @@
+schema: augur.policy/v0
+default: YELLOW
+host_label: host
+watchdog:
+  alertname: Watchdog
+  deadman_window: 5m
+node_exporter_red_hold: 10m
+first_class_hosts:
+  - host-a
+  - host-b
+  - host-c
+  - host-d
+rules:
+  - id: peer-prom-down
+    match:
+      alertname:
+        regex: host-[
+    severity: YELLOW

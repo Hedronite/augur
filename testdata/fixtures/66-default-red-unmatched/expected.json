@@ -1,0 +1,50 @@
+{
+  "schema": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "flag",
+  "overall": "RED",
+  "policy_sha256": "c719162aae4a86a7807960229f2bff1e1ece1e25e1e3381ad85d78dfd6817878",
+  "reasons": [],
+  "watchdog": {
+    "seen": true,
+    "last_seen": "2026-01-15T11:58:00Z"
+  },
+  "sources": [
+    {
+      "id": "file",
+      "state": "ok",
+      "last_ok": "2026-01-15T12:00:00Z",
+      "alert_count": 2
+    }
+  ],
+  "alerts": [
+    {
+      "name": "Watchdog",
+      "host": "host-a",
+      "severity": "GREEN",
+      "source_severity": null,
+      "expected": true,
+      "status": "active",
+      "starts_at": "2025-12-01T00:00:00Z",
+      "replicas": [],
+      "rule_id": null,
+      "reasons": [
+        "heartbeat"
+      ]
+    },
+    {
+      "name": "CustomJobFailed",
+      "host": "host-b",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T11:30:00Z",
+      "replicas": [],
+      "rule_id": null,
+      "reasons": [
+        "unmatched_default"
+      ]
+    }
+  ]
+}

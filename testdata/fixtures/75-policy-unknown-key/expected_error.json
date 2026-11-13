@@ -1,5 +1,6 @@
 {
   "exit": 4,
   "code": "invalid_policy",
-  "detail": "bogus"
+  "detail": "bogus",
+  "policy_schema": "invalid"
 }

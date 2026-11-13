@@ -25,7 +25,7 @@
       "source_severity": null,
       "expected": false,
       "status": "active",
-      "starts_at": "2026-01-15T11:45:00Z",
+      "starts_at": "2026-01-15T11:57:00Z",
       "replicas": [
         "r1",
         "r2"
