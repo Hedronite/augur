@@ -21,8 +21,6 @@ env:
   # release notes; rebuilding with another patch release gives other bytes.
   GO_VERSION: '1.27.4'
   GOTOOLCHAIN: local
-  CYCLONEDX_GOMOD_VERSION: v1.12.0
-  CYCLONEDX_GOMOD_SUM: h1:OuFUYNhnjpju7RNArOVPPchFPWNobGfhrHODDPKcgZs=
 
 jobs:
   build:
@@ -57,14 +55,10 @@ jobs:
           } > staging/RELEASE_NOTES.md
       - name: Build tarballs and checksums
         run: scripts/release.sh "$VERSION" dist
-      - name: Install cyclonedx-gomod (version and module checksum pinned)
-        working-directory: ${{ runner.temp }}
+      - name: Install cyclonedx-gomod (version and module checksum pinned in the script)
         run: |
-          mod=github.com/CycloneDX/cyclonedx-gomod
-          got="$(go mod download -json "$mod@$CYCLONEDX_GOMOD_VERSION" | sed -n 's/.*"Sum": "\(.*\)",$/\1/p')"
-          test "$got" = "$CYCLONEDX_GOMOD_SUM"
-          go install "$mod/cmd/cyclonedx-gomod@$CYCLONEDX_GOMOD_VERSION"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          scripts/install-cyclonedx.sh "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: SBOMs, each checked against its binary
         run: scripts/sbom.sh "$VERSION" dist
       - name: Stage the release files

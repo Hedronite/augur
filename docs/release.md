@@ -99,8 +99,8 @@ The comparison that must hold is the **tarball lines**: no output from `diff`
 means the bytes are identical. A difference means the bytes differ: check the
 Go patch version first. A local `make release` writes only the tarballs; the
 SBOM lines of the published `SHA256SUMS` come from `make sbom`, which needs
-`cyclonedx-gomod` at the pinned version (see above) and is not part of the
-rebuild check.
+`cyclonedx-gomod` at the pinned version (`scripts/install-cyclonedx.sh` installs it
+and checks its module hash) and is not part of the rebuild check.
 
 ## Verify what you downloaded
 
