@@ -47,7 +47,7 @@ consumer existed. No Augur code equals one of Vigil's own codes.
 | `node_exporter_down_both_views` | RED | The same alert confirmed: every declared replica reports it and the merged age is past the hold. |
 | `node_exporter_views_split` | YELLOW | A declared replica is live and does not report the alert while another replica does. A path problem on one side alone, with a healthy peer, stays YELLOW. |
 | `alert_clock_skew` | state | The alert's `starts_at` is in the future; hold age is clamped at 0. |
-| `unmapped_host` | state | The host label is missing or is not a valid slug (`^[a-z0-9][a-z0-9-]{0,31}$`); the alert's `host` field is the literal value `unmapped`. Raw label values are never echoed. |
+| `unmapped_host` | state | The host label is missing or is not a valid slug (`^[a-z0-9][a-z0-9-]{0,31}$`); the alert's `host` field is the literal value `unmapped`. The heartbeat alert never carries this reason — the real Watchdog has no host label, so its host is `unmapped` by design. Raw label values are never echoed. |
 
 ## The replicas rule
 

@@ -204,9 +204,10 @@ func (e *evaluator) heartbeatAlert(ms []member) model.VerdictAlert {
 	va.Expected = true
 	reasons := []model.Reason{model.ReasonHeartbeat}
 	reasons = append(reasons, suppressionReasons(ms)...)
-	if !ms[0].hostMapped {
-		reasons = append(reasons, model.ReasonUnmappedHost)
-	}
+	// No unmapped_host here. The Watchdog is the heartbeat, it carries no host
+	// label by design, and its host is therefore the literal unmapped; calling
+	// that an anomaly would make every healthy mesh look like it had one. A
+	// non-heartbeat alert with an unreadable host still reports it (fixture 61).
 	va.Reasons = sortedReasons(reasons)
 	return va
 }
