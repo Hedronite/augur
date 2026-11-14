@@ -11,7 +11,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 1. `evaluate` reports a single source: `{"id":"file","state":"ok","last_ok":<now>,"alert_count":<len(alerts.json)>}`.
 2. Top-level `reasons[]` carries heartbeat and source conditions only (`watchdog_only`, `watchdog_missing`, `observability_blind`, `alertmanager_unreachable`, `alertmanager_stale`). When alerts alone drive the severity, it is empty; `alerts[].reasons[]` explains the rest.
 3. Any alert named by `watchdog.alertname` sets `watchdog.seen`, with `last_seen` equal to that alert's `updatedAt`. An empty array means not seen.
-4. The Watchdog appears in `alerts[]` with severity `GREEN`, `expected: true`, `rule_id: null` and reason `heartbeat` (plus `silenced` when suppressed). It never takes `unmatched_default`.
+4. The Watchdog appears in `alerts[]` with severity `GREEN`, `expected: true`, `rule_id: null` and reason `heartbeat` (plus `silenced` when suppressed). It never takes `unmatched_default`, and it never takes `unmapped_host` either, even though its host is the literal `unmapped` because it carries no host label (`80`); a non-heartbeat alert with an unreadable host still does (`61`).
 5. `rule_matched` accompanies every alert a rule matched, including held and suppressed ones. `rule_id` names the rule that decided the final severity, which is the worst one when several match. `rule_id` is `null` exactly when `unmatched_default` is present.
 6. Holds and suppression are decided before the `node_exporter_red_hold` escalation, so neither can produce a `node_exporter_*` RED reason (`24`, `31`). Suppression also outranks escalation.
 7. `expected: true` means "excused right now": the Watchdog and alerts under an active hold. An announced dark past `expires_at` is `expected: false` and raises (`23`).
@@ -77,6 +77,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `77-policy-bad-duration` | validate | A duration outside the accepted grammar is an error naming the field | exit 4 invalid_policy |
 | `78-policy-unknown-rule-key` | evaluate | An unknown key nested in a rule is an error | exit 4 invalid_policy |
 | `79-policy-bad-regex` | validate | A matcher regex that does not compile is a policy error; the schema cannot see it, so validate must compile it | exit 4 invalid_policy |
+| `80-watchdog-real-labels` | evaluate | The Watchdog carries real labels but no host: host is unmapped, reasons stay heartbeat only | GREEN — watchdog_only |
 
 ## Coverage against §5
 
