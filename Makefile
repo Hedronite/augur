@@ -5,7 +5,7 @@ export PATH := $(GOBIN):$(PATH)
 
 # Reproducible-build settings (see README and CI).
 export CGO_ENABLED = 0
-SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct 2>/dev/null || echo 0)
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct 2>/dev/null)
 export SOURCE_DATE_EPOCH
 LDFLAGS := -s -w -buildid= -X github.com/Hedronite/augur/internal/cli.version=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
