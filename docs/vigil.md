@@ -93,6 +93,15 @@ suppressible or raising, and a raising alert is never GREEN.
 other authority's verdict. Per-host alert state never joins `hosts[]`; that
 array stays Simplex's.
 
+## Stability
+
+v0 promises nothing beyond the versioned documents. `augur.verdict/v0` and
+`augur.vigil-block/v0` change only **additively** within v0: a field may be
+added, and is never removed, renamed, re-typed or given a new meaning. The
+exit codes and the reason codes are frozen for v0. Anything else about this
+mapping can change in any release; the goldens under `testdata/vigil/` are
+updated together with this page when it does.
+
 ## What Vigil adds itself
 
 Vigil contributes its own reason codes to `verdicts[].reasons` and applies

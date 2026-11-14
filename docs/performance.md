@@ -17,6 +17,12 @@ The 4000-alert figure is the `serve` input cap; 100 000 is the `evaluate`
 cap. `evaluate` on a 16 MiB input is rejected above the cap, so the budgets
 bound every supported input.
 
+Advisory: `serve` decodes a body *before* it applies the 4000-alert cap, so a
+16 MiB body holding more than 4000 alerts allocates roughly 149 MB
+transiently — the measured 16 MiB decode working set — before it is refused
+as `too_many`. That peak is bounded and fails closed, but the 64 MiB RSS
+budget describes steady state at 4000 alerts, not that transient peak.
+
 ## Benchmarks
 
 Go benchmarks report ns/op, B/op and allocs/op (`b.ReportAllocs()`), run on
