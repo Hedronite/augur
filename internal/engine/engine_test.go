@@ -159,6 +159,8 @@ func TestReplicasRule(t *testing.T) {
 		{"lost peer, merged age still within hold", []model.Alert{ne(5*time.Minute, "r1"), peer("r2")}, model.Yellow, model.ReasonNodeExporterWithinHold, []string{"r1"}},
 		{"the reporter itself is lost", []model.Alert{ne(time.Hour, "r1"), peer("r1")}, model.Yellow, model.ReasonNodeExporterViewsSplit, []string{"r1"}},
 		{"unlabeled report cannot be attributed", []model.Alert{alert("NodeExporterDown", "host-a", time.Hour)}, model.Red, model.ReasonNodeExporterSingleView, []string{}},
+		{"unlabeled report, inside the hold", []model.Alert{alert("NodeExporterDown", "host-a", 5*time.Minute)}, model.Yellow, model.ReasonNodeExporterWithinHold, []string{}},
+		{"unlabeled report, exactly at the hold", []model.Alert{alert("NodeExporterDown", "host-a", 10*time.Minute)}, model.Red, model.ReasonNodeExporterSingleView, []string{}},
 		{"undeclared replica cannot be attributed", []model.Alert{ne(time.Hour, "r9")}, model.Red, model.ReasonNodeExporterSingleView, []string{"r9"}},
 	}
 	for _, c := range cases {
@@ -182,6 +184,19 @@ func TestReplicasUnsetIsOneView(t *testing.T) {
 	a := find(t, v, "NodeExporterDown")
 	if a.Severity != model.Red || !has(a.Reasons, model.ReasonNodeExporterSingleView) || len(a.Replicas) != 1 {
 		t.Fatalf("%+v", a)
+	}
+}
+
+// With replicas unset an unlabeled report is the one view, past the hold or not.
+func TestUnlabeledReportReplicasUnset(t *testing.T) {
+	p := testPolicy(nil)
+	v := engine.Evaluate(snap(watchdog(), alert("NodeExporterDown", "host-a", time.Hour)), p, now)
+	if a := find(t, v, "NodeExporterDown"); a.Severity != model.Red || !has(a.Reasons, model.ReasonNodeExporterSingleView) {
+		t.Fatalf("past the hold: %+v", a)
+	}
+	v = engine.Evaluate(snap(watchdog(), alert("NodeExporterDown", "host-a", 5*time.Minute)), p, now)
+	if a := find(t, v, "NodeExporterDown"); a.Severity != model.Yellow || !has(a.Reasons, model.ReasonNodeExporterWithinHold) {
+		t.Fatalf("inside the hold: %+v", a)
 	}
 }
 

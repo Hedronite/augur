@@ -16,8 +16,9 @@ import (
 	"github.com/Hedronite/augur/internal/render"
 )
 
-// maxInputBytes caps every input file. A file over the cap is an input error
-// (exit 3) for --alerts and a policy error (exit 4) for --policy.
+// maxInputBytes caps every input file. A file that cannot be read, or is over
+// the cap, is an input error (exit 3) for --alerts and a config error (exit 5)
+// for --policy. Exit 4 means the policy was read but is invalid.
 const maxInputBytes = 16 << 20
 
 // wallClock is the process clock. It is a variable so tests can fix it; the
@@ -54,7 +55,7 @@ func unwrapPathError(err error) error {
 func loadPolicy(path string, stderr io.Writer) (model.Policy, error) {
 	data, err := readCapped(path, maxInputBytes)
 	if err != nil {
-		return model.Policy{}, &exitError{code: ExitPolicy, msg: fmt.Sprintf("invalid_policy: cannot read policy %s: %v", path, err)}
+		return model.Policy{}, &exitError{code: ExitConfig, msg: fmt.Sprintf("cannot read policy %s: %v", path, err)}
 	}
 	pol, errs := policy.Parse(data)
 	if len(errs) > 0 {
