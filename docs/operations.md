@@ -63,7 +63,7 @@ alerts as current would fail open.
 | --- | --- | --- |
 | `ok` | Poll succeeded; the snapshot is decoded and classified normally. | Per the watch rules; Watchdog seen → GREEN-eligible. |
 | `unreachable` | Connect error, timeout, non-200, refused redirect, over-cap body, or decode error. Classified as an empty snapshot: `alerts: []`. | YELLOW `source_unreachable` + `watchdog_missing`; RED `observability_blind` once `deadman_window` has passed since the last good heartbeat. |
-| `stale` | Poll succeeded, but the Watchdog's `updatedAt` is older than `deadman_window`: Alertmanager is up while the alert source stopped refreshing. The Watchdog counts as **not seen**. | `source_stale` added; the tracker proceeds as for a missed heartbeat → YELLOW, then RED past the window. |
+| `stale` | Poll succeeded, but the Watchdog's `updatedAt` is older than `deadman_window`: Alertmanager is up while the alert source stopped refreshing. The Watchdog counts as **not seen**. | `source_stale` added; the tracker proceeds as for a missed heartbeat → YELLOW, then RED past the window. `alert_count` still counts every alert read, including the dropped Watchdog. |
 
 ## The dead-man window
 
@@ -88,6 +88,11 @@ alerts as current would fail open.
 | `SIGTERM` / `SIGINT` | The write in progress finishes, then the process exits. | 0 |
 | `SIGHUP` | Logged and ignored; there is no policy reload in v0. Restart to reload. | — |
 | Verdict over 4 MiB | Internal error; last file left in place to age stale. | 6 |
+
+After a panic (exit 6) or any other non-zero exit, `Restart=on-failure` in the
+example unit restarts the process, bounded by systemd's start limits
+(`StartLimitIntervalSec` and `StartLimitBurst`); a restart resets the dead-man
+clock. A clean `SIGTERM` exit 0 is not restarted.
 
 When `serve` stops with no new write — crash, panic, or clean shutdown — the
 last file is left alone. Vigil ages a file that has not been updated for

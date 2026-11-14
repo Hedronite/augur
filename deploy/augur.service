@@ -36,6 +36,13 @@ SystemCallFilter=@system-service
 RestrictAddressFamilies=AF_INET AF_INET6
 IPAddressDeny=any
 IPAddressAllow=localhost
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+ProtectProc=invisible
+PrivateDevices=true
+UMask=0027
 
 [Install]
 WantedBy=multi-user.target
