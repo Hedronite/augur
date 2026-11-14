@@ -2,7 +2,7 @@
 
 Augur reads alerts from Prometheus Alertmanager and classifies them as `GREEN`, `YELLOW` or `RED`, with a machine-readable reason for each verdict. It only advises: it never silences, acknowledges or routes alerts.
 
-Status: pre-release. `evaluate` and `validate` are implemented; `serve` is planned (A2).
+Status: pre-release. `evaluate`, `validate` and `serve` are implemented.
 
 Not related to [AugurProject/augur](https://github.com/AugurProject/augur).
 
@@ -61,8 +61,6 @@ augur evaluate \
 augur validate --policy examples/policy.yaml
 ```
 
-`serve` — poll Alertmanager on loopback and write each verdict to a file atomically — is planned for A2.
-
 `--now RFC3339` makes a run deterministic; without it, `evaluate` uses the wall clock and the verdict records which (`time_source`). Human-readable output is the default; `--json` prints the document alone on stdout; `--quiet` prints nothing and only sets the exit code. Errors go to stderr, name the file and field, show a short excerpt, and say how to fix it.
 
 The run above prints:
@@ -79,9 +77,31 @@ alerts:
 
 Note on views: `examples/policy.yaml` declares two replicas (`r1`, `r2`) to show the two-view rules. A single-view deployment — today's — omits `replicas` entirely and runs in single-view mode.
 
+## Serving
+
+`augur serve` polls the Alertmanager v2 API and keeps a verdict file current for Vigil to read. Runbook-level detail is in [`docs/operations.md`](docs/operations.md).
+
+```sh
+augur serve \
+  --policy /etc/augur/policy.yaml \
+  --alertmanager http://127.0.0.1:9093 \
+  --out /var/lib/augur/verdict.json \
+  [--interval 30s]
+```
+
+- **Polling.** The first verdict is written straight away at startup, then one per interval. Every poll writes a verdict — including a failed one. A failed poll (connect error, timeout, non-200, refused redirect, an over-cap body, or a decode error) classifies an *empty* snapshot: `alerts: []`, the source `unreachable`, verdict YELLOW with `source_unreachable` and `watchdog_missing`, going RED `observability_blind` once the dead-man window passes. Old alerts are never reused as current.
+- **`stale`.** A poll that succeeds but carries a Watchdog `updatedAt` older than `deadman_window` means Alertmanager is up while the alert source stopped refreshing: the source is marked `stale`, the Watchdog counts as not seen, and `source_stale` is added.
+- **The URL.** `--alertmanager` must be `http://` to a *literal* loopback address (`127.0.0.0/8` or `[::1]`). `localhost` and other names are refused on purpose: resolving a name is a trust step Augur does not need.
+- **Startup refusals (exit 5).** A non-loopback URL, an unreadable `--policy`, an unwritable `--out` directory, or an `--interval` outside 5 s–60 s (default 30 s; the bounds keep the file inside Vigil's 120 s `stale_after`). A readable but invalid policy is exit 4.
+- **The file.** Written atomically — temp file, fsync, rename, directory fsync — mode 0644, canonical `augur.verdict/v0` JSON under Vigil's 4 MiB cap, never truncated: a verdict that would not fit is an internal error (exit 6) that leaves the last file in place.
+- **Shutdown.** `SIGTERM`/`SIGINT` finish any write in progress and exit 0. A crash or panic leaves the last file untouched; Vigil ages a file that stops updating into `stale` after 120 s. There is no state file: a restart resets the dead-man clock.
+- **Policy.** Read once at startup; there is no reload in v0. Restart to pick up a new policy. `SIGHUP` is logged and ignored.
+- **Logs.** `log/slog` JSON on stderr: one line per poll and one per tracker state change — enum values and counts only, never label values or alert text.
+- **Deployment.** [`deploy/augur.service`](deploy/augur.service) is an example systemd unit — not installed — with generic paths and a hardened sandbox.
+
 ## Security
 
-Augur has no network listener: `serve` (planned, A2) reads the Alertmanager API on loopback only and refuses a non-loopback URL. It never changes alert state, never echoes raw label values, and never takes secrets on the command line. See [SECURITY.md](SECURITY.md) to report a vulnerability. The repository contains synthetic host slugs only (`host-a` … `host-e`); alert names follow the real rule set and are public by design. The real policy lives off-repository.
+Augur has no network listener: `serve` only *reads* the Alertmanager API on a literal loopback address and refuses anything else. It never changes alert state, never echoes raw label values, and never takes secrets on the command line. See [SECURITY.md](SECURITY.md) to report a vulnerability. The repository contains synthetic host slugs only (`host-a` … `host-e`); alert names follow the real rule set and are public by design. The real policy lives off-repository.
 
 ## Contributing
 

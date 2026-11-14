@@ -1,0 +1,41 @@
+# Example systemd unit for `augur serve`.
+# This file is an EXAMPLE, NOT INSTALLED: adjust the paths to the host and
+# review the hardening before using it. Installing is a separate, explicitly
+# approved step.
+#
+# The policy is read once at startup: `systemctl restart augur` to apply a
+# new one. The real policy lives off-repo, mode 0640, owned root:augur.
+
+[Unit]
+Description=Augur alert classifier (serve)
+Documentation=https://github.com/Hedronite/augur
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=augur
+Group=augur
+ExecStart=/usr/local/bin/augur serve \
+  --policy /etc/augur/policy.yaml \
+  --alertmanager http://127.0.0.1:9093 \
+  --out /var/lib/augur/verdict.json \
+  --interval 30s
+Restart=on-failure
+RestartSec=5s
+
+# Hardening. Augur needs one outbound loopback connection and one output
+# directory; everything else is denied.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+StateDirectory=augur
+CapabilityBoundingSet=
+SystemCallFilter=@system-service
+RestrictAddressFamilies=AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target
