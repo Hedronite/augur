@@ -21,7 +21,7 @@ func fixture50Verdict() model.Verdict {
 	watchStart := mustTime("2025-12-01T00:00:00Z")
 	rule := "node-exporter-down"
 	return model.Verdict{
-		Schema:       model.VerdictSchema,
+		APIVersion:   model.VerdictAPIVersion,
 		GeneratedAt:  generated,
 		TimeSource:   model.TimeFlag,
 		Overall:      model.Red,
@@ -150,7 +150,7 @@ func TestHumanGolden(t *testing.T) {
 	}{
 		{"human-fixture50.golden", fixture50Verdict()},
 		{"human-empty.golden", model.Verdict{
-			Schema:       model.VerdictSchema,
+			APIVersion:   model.VerdictAPIVersion,
 			GeneratedAt:  mustTime("2026-01-15T12:00:00Z"),
 			TimeSource:   model.TimeWall,
 			Overall:      model.Yellow,

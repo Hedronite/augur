@@ -24,7 +24,7 @@ Augur sits beside the Simplex → Vigil → Facet triad. Vigil's `overall` is th
 
 ## The verdict document
 
-Every classification produces an `augur.verdict/v0` document — schema, `generated_at`, `time_source`, `overall`, `policy_sha256`, top-level rollup reasons, Watchdog heartbeat state, source states, and one entry per alert with its own severity and reason codes. The contract is [`schema/verdict.v0.json`](schema/verdict.v0.json); the full reason-code table is in [`docs/reasons.md`](docs/reasons.md).
+Every classification produces an `augur.verdict/v0` document — `apiVersion`, `generated_at`, `time_source`, `overall`, `policy_sha256`, top-level rollup reasons, Watchdog heartbeat state, source states, and one entry per alert with its own severity and reason codes. The contract is [`schema/verdict.v0.json`](schema/verdict.v0.json); the full reason-code table is in [`docs/reasons.md`](docs/reasons.md).
 
 Short version of the rollup:
 

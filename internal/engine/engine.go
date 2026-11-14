@@ -38,7 +38,7 @@ func Evaluate(snap model.Snapshot, pol model.Policy, now time.Time) model.Verdic
 	}
 
 	v := model.Verdict{
-		Schema:       model.VerdictSchema,
+		APIVersion:   model.VerdictAPIVersion,
 		GeneratedAt:  now,
 		Overall:      model.Green,
 		PolicySHA256: pol.SHA256,
