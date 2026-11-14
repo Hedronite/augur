@@ -36,15 +36,26 @@ Each commit must carry a `Signed-off-by` line matching its author. Commits and P
 Every user-facing error follows the same shape:
 
 1. **Name the file and the field.** `policy.yaml: holds[1].expires_at: …`
-2. **Show a short excerpt of the offending input** — one line, no more.
+2. **Show a short excerpt of the offending input** — one line, no more. Excerpts are hard-bounded: truncated, stripped of control characters, and never the raw unbounded value.
 3. **Say how to fix it.** Not just what broke; what valid looks like.
 
 Additional rules:
 
 - Errors go to stderr. stdout carries only the verdict or the document.
 - `validate` reports *every* policy error, not just the first — a user should not have to fix one error per run.
-- Never echo raw label values, secrets or full payloads into an error message. Truncate excerpts.
+- Never echo raw label values, secrets or full payloads into an error message. Excerpts are truncated and control-character-free by construction (`internal/render`); every producer must feed it bounded values too.
 - Unsupported input is a *typed* error naming the detected shape, so callers can distinguish an Alertmanager webhook message from a Grafana contact-point payload without parsing the message themselves.
+
+## Repository hygiene
+
+`scripts/scrub.sh` checks every tracked file for addresses, tailnet names and home paths, and fails the build on a hit, reporting only `file:line`. Run it locally before opening a PR:
+
+```sh
+scripts/scrub.sh               # check the tree
+scripts/scrub.sh --self-test   # verify the patterns catch their samples
+```
+
+To check a private denylist, set `AUGUR_SCRUB_EXTRA` to newline-separated extended regexes (or to a file of them). The list is never printed, committed or echoed; a hit is still reported as `file:line` only. When the variable is empty, the extra step is skipped and the script says so.
 
 ## Tests
 
