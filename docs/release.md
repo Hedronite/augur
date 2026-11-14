@@ -65,9 +65,12 @@ no release and no attestation.
 
 Everything a dry run produces is byte-identical to the tag run on the same
 commit: the tarballs, the binaries, the SBOMs and the whole `SHA256SUMS`. (The
-SBOM tool stamps the main component's version from the VCS state, so
-`scripts/sbom.sh` pins it to the version being built; without that, a dry run
-and a tag run would differ in that one field.)
+SBOM tool records two things that depend on where it ran, and
+`scripts/sbom.sh` normalises both: the digests of the tool's own binary, which
+differ per build platform, are dropped from `metadata.tools` (its name and
+version stay); and the main component's version, which the tool stamps from
+the VCS state, is pinned to the version being built. With both, the SBOMs,
+and so the whole `SHA256SUMS`, are the same on any host.)
 
 ## Rebuild it yourself
 
