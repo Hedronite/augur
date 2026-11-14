@@ -230,6 +230,30 @@ func decodeAlert(item json.RawMessage, i int) (model.Alert, *ErrMalformed) {
 	if err != nil {
 		return model.Alert{}, err
 	}
+	// Every property am-alerts.v2.json declares is type-checked, including the
+	// ones Augur never reads, because a caller must not be told "valid" about a
+	// shape the schema rejects. Where each declared property is enforced:
+	//
+	//	labels       decodeLabels      object, alertname a non-empty string
+	//	annotations  checkStringMap    object of strings
+	//	startsAt     requiredTime      string, format and pattern
+	//	endsAt       optionalTime      string, format and pattern
+	//	updatedAt    optionalTime      string, format and pattern
+	//	fingerprint  checkString       string
+	//	generatorURL checkString       string
+	//	status       decodeState       object, state an enum, ID lists arrays
+	//
+	// Anything else is an unknown field, which the schema allows and the decoder
+	// ignores.
+	if err := checkStringMap(fields["annotations"], i, "annotations"); err != nil {
+		return model.Alert{}, err
+	}
+	if err := checkString(fields["fingerprint"], i, "fingerprint"); err != nil {
+		return model.Alert{}, err
+	}
+	if err := checkString(fields["generatorURL"], i, "generatorURL"); err != nil {
+		return model.Alert{}, err
+	}
 
 	a := model.Alert{
 		Name:      boundName(alertName),
@@ -242,6 +266,39 @@ func decodeAlert(item json.RawMessage, i int) (model.Alert, *ErrMalformed) {
 		a.SourceSeverity = &sev
 	}
 	return a, nil
+}
+
+// checkString enforces a declared string property the decoder does not read,
+// such as fingerprint or generatorURL. A null is not a string.
+func checkString(raw json.RawMessage, i int, field string) *ErrMalformed {
+	if len(raw) == 0 {
+		return nil
+	}
+	if _, ok := jsonString(raw); !ok {
+		return malformed(i, field, "must be a string")
+	}
+	return nil
+}
+
+// checkStringMap enforces a declared object-of-strings property, such as
+// annotations. The values are never read and never output.
+func checkStringMap(raw json.RawMessage, i int, field string) *ErrMalformed {
+	if len(raw) == 0 {
+		return nil
+	}
+	if bytes.Equal(raw, nullJSON) {
+		return malformed(i, field, "must be an object of strings")
+	}
+	var pairs map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &pairs); err != nil {
+		return malformed(i, field, "must be an object of strings")
+	}
+	for _, v := range pairs {
+		if _, ok := jsonString(v); !ok {
+			return malformed(i, field, "must be an object of strings")
+		}
+	}
+	return nil
 }
 
 // decodeLabels reads the label set. Every value must be a JSON string, which is
@@ -325,8 +382,11 @@ func idList(raw json.RawMessage) []string {
 // checkIDList enforces the schema's rule that a present ID list is an array of
 // strings.
 func checkIDList(raw json.RawMessage, i int, field string) *ErrMalformed {
-	if len(raw) == 0 || bytes.Equal(raw, nullJSON) {
+	if len(raw) == 0 {
 		return nil
+	}
+	if bytes.Equal(raw, nullJSON) {
+		return malformed(i, field, "must be an array of strings")
 	}
 	var ids []string
 	if err := json.Unmarshal(raw, &ids); err != nil {

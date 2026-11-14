@@ -75,6 +75,29 @@ func seedFixtures(f *testing.F) {
 		}
 		f.Add(b)
 	}
+	// The reported CI input: a fingerprint that is an object. The schema types
+	// it as a string, so the decoder must reject the document.
+	f.Add([]byte(`[{"labels":{"alertname":"000000","0000":"0000"},"startsAt":"0000-01-01T00:00:00Z",` +
+		`"000000":"00000000000000000000","000000000":"00000000000000000000",` +
+		`"fingerprint":{},"status":{"state":"active"}}]`))
+
+	// One seed per field class the schema types but Augur does not read, so the
+	// differential has each class in the corpus from the start.
+	for _, extra := range []string{
+		`"fingerprint":{}`,
+		`"annotations":{"summary":1}`,
+		`"generatorURL":7`,
+		`"endsAt":[]`,
+		`"updatedAt":{}`,
+	} {
+		f.Add([]byte(`[{"labels":{"alertname":"A"},"startsAt":"2026-01-15T11:00:00Z",` +
+			`"status":{"state":"active"},` + extra + `}]`))
+	}
+	f.Add([]byte(`[{"labels":{"alertname":"A"},"startsAt":"2026-01-15T11:00:00Z",` +
+		`"status":{"state":"suppressed","silencedBy":null}}]`))
+	f.Add([]byte(`[{"labels":{"alertname":"A"},"startsAt":"2026-01-15T11:00:00Z",` +
+		`"status":{"state":"suppressed","inhibitedBy":"id"}}]`))
+
 	// Keys are matched exactly, as the schema matches them. A mixed-case key on
 	// its own leaves "startsAt" missing, which the schema rejects; a mixed-case
 	// key beside the real one is an unknown field the schema accepts, so the
