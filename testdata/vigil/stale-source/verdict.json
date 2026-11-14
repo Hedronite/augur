@@ -1,0 +1,39 @@
+{
+  "apiVersion": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "wall",
+  "overall": "YELLOW",
+  "policy_sha256": "4b72105466aa2f84e399336c5e31f5052fd5e0911f2662c31fed79df4fdb57f0",
+  "reasons": [
+    "alertmanager_stale",
+    "watchdog_missing"
+  ],
+  "watchdog": {
+    "seen": false,
+    "last_seen": null
+  },
+  "sources": [
+    {
+      "id": "alertmanager",
+      "state": "stale",
+      "last_ok": "2026-01-15T12:00:00Z",
+      "alert_count": 2
+    }
+  ],
+  "alerts": [
+    {
+      "name": "PeerPrometheusDown",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T11:20:00Z",
+      "replicas": [],
+      "rule_id": "peer-prom-down",
+      "reasons": [
+        "rule_matched"
+      ]
+    }
+  ]
+}

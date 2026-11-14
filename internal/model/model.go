@@ -49,31 +49,31 @@ type Reason string
 
 // Top-level (rollup) reasons: heartbeat and source state.
 const (
-	ReasonWatchdogOnly            Reason = "watchdog_only"
-	ReasonWatchdogMissing         Reason = "watchdog_missing"
-	ReasonObservabilityBlind      Reason = "observability_blind"
-	ReasonAlertmanagerUnreachable Reason = "alertmanager_unreachable"
-	ReasonAlertmanagerStale       Reason = "alertmanager_stale"
+	ReasonWatchdogOnly             Reason = "watchdog_only"
+	ReasonWatchdogMissing          Reason = "watchdog_missing"
+	ReasonObservabilityBlind       Reason = "observability_blind"
+	ReasonAlertmanagerUnreachable  Reason = "alertmanager_unreachable"
+	ReasonAlertmanagerStale        Reason = "alertmanager_stale"
+	ReasonEvaluationClockBackwards Reason = "evaluation_clock_backwards"
 )
 
 // Per-alert reasons.
 const (
-	ReasonHeartbeat                Reason = "heartbeat"
-	ReasonRuleMatched              Reason = "rule_matched"
-	ReasonUnmatchedDefault         Reason = "unmatched_default"
-	ReasonHeldExpectedDark         Reason = "held_expected_dark"
-	ReasonHeldKnown                Reason = "held_known"
-	ReasonHeldAnnouncedDark        Reason = "held_announced_dark"
-	ReasonAnnouncedDarkExpired     Reason = "announced_dark_expired"
-	ReasonSilenced                 Reason = "silenced"
-	ReasonInhibited                Reason = "inhibited"
-	ReasonNodeExporterWithinHold   Reason = "node_exporter_within_hold"
-	ReasonNodeExporterSingleView   Reason = "node_exporter_down_single_view"
-	ReasonNodeExporterBothViews    Reason = "node_exporter_down_both_views"
-	ReasonNodeExporterViewsSplit   Reason = "node_exporter_views_split"
-	ReasonAlertClockSkew           Reason = "alert_clock_skew"
-	ReasonEvaluationClockBackwards Reason = "evaluation_clock_backwards"
-	ReasonUnmappedHost             Reason = "unmapped_host"
+	ReasonHeartbeat              Reason = "heartbeat"
+	ReasonRuleMatched            Reason = "rule_matched"
+	ReasonUnmatchedDefault       Reason = "unmatched_default"
+	ReasonHeldExpectedDark       Reason = "held_expected_dark"
+	ReasonHeldKnown              Reason = "held_known"
+	ReasonHeldAnnouncedDark      Reason = "held_announced_dark"
+	ReasonAnnouncedDarkExpired   Reason = "announced_dark_expired"
+	ReasonSilenced               Reason = "silenced"
+	ReasonInhibited              Reason = "inhibited"
+	ReasonNodeExporterWithinHold Reason = "node_exporter_within_hold"
+	ReasonNodeExporterSingleView Reason = "node_exporter_down_single_view"
+	ReasonNodeExporterBothViews  Reason = "node_exporter_down_both_views"
+	ReasonNodeExporterViewsSplit Reason = "node_exporter_views_split"
+	ReasonAlertClockSkew         Reason = "alert_clock_skew"
+	ReasonUnmappedHost           Reason = "unmapped_host"
 )
 
 // AllReasons returns every reason code, sorted. It is the Go side of the

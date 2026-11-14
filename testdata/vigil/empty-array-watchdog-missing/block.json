@@ -1,0 +1,21 @@
+{
+  "apiVersion": "augur.vigil-block/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "policy_sha256": "b7f1fe1bbea7192242367d18b20f37b7ccd2770678506c4845345277ff6ec048",
+  "watchdog": {
+    "seen": false,
+    "last_seen": null
+  },
+  "alertmanager_last_ok": "2026-01-15T12:00:00Z",
+  "counts": {
+    "total": 0,
+    "raising": {
+      "RED": 0,
+      "YELLOW": 0
+    },
+    "expected": 0,
+    "suppressed": 0
+  },
+  "alerts": [],
+  "omitted": 0
+}

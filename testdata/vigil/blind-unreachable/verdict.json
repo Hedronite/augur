@@ -1,0 +1,25 @@
+{
+  "apiVersion": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "wall",
+  "overall": "RED",
+  "policy_sha256": "4b72105466aa2f84e399336c5e31f5052fd5e0911f2662c31fed79df4fdb57f0",
+  "reasons": [
+    "alertmanager_unreachable",
+    "observability_blind",
+    "watchdog_missing"
+  ],
+  "watchdog": {
+    "seen": false,
+    "last_seen": null
+  },
+  "sources": [
+    {
+      "id": "alertmanager",
+      "state": "unreachable",
+      "last_ok": "2026-01-15T11:54:00Z",
+      "alert_count": 0
+    }
+  ],
+  "alerts": []
+}

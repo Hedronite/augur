@@ -1,0 +1,876 @@
+{
+  "apiVersion": "augur.verdict/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "time_source": "wall",
+  "overall": "RED",
+  "policy_sha256": "4b72105466aa2f84e399336c5e31f5052fd5e0911f2662c31fed79df4fdb57f0",
+  "reasons": [],
+  "watchdog": {
+    "seen": true,
+    "last_seen": "2026-01-15T11:58:00Z"
+  },
+  "sources": [
+    {
+      "id": "alertmanager",
+      "state": "ok",
+      "last_ok": "2026-01-15T12:00:00Z",
+      "alert_count": 61
+    }
+  ],
+  "alerts": [
+    {
+      "name": "Synthetic00",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:00:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic05",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:05:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic10",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:10:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic15",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:15:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic20",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:20:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic25",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:25:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic30",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:30:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic35",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:35:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic40",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:40:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic45",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:45:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic50",
+      "host": "host-a",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:50:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic55",
+      "host": "host-a",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:55:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Watchdog",
+      "host": "host-a",
+      "severity": "GREEN",
+      "source_severity": null,
+      "expected": true,
+      "status": "active",
+      "starts_at": "2026-01-14T12:00:00Z",
+      "replicas": [],
+      "rule_id": null,
+      "reasons": [
+        "heartbeat"
+      ]
+    },
+    {
+      "name": "Synthetic01",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:01:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic06",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:06:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic11",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:11:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic16",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:16:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic21",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:21:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic26",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:26:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic31",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:31:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic36",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:36:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic41",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:41:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic46",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:46:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic51",
+      "host": "host-b",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:51:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic56",
+      "host": "host-b",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:56:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic02",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:02:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic07",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:07:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic12",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:12:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic17",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:17:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic22",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:22:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic27",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:27:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic32",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:32:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic37",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:37:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic42",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:42:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic47",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:47:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic52",
+      "host": "host-c",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:52:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic57",
+      "host": "host-c",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:57:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic03",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:03:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic08",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:08:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic13",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:13:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic18",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:18:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic23",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:23:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic28",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:28:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic33",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:33:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic38",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:38:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic43",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:43:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic48",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:48:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic53",
+      "host": "host-d",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:53:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic58",
+      "host": "host-d",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:58:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic04",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:04:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic09",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:09:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic14",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:14:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic19",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:19:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic24",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:24:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic29",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:29:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic34",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:34:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic39",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:39:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic44",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:44:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic49",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:49:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic54",
+      "host": "host-e",
+      "severity": "YELLOW",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:54:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    },
+    {
+      "name": "Synthetic59",
+      "host": "host-e",
+      "severity": "RED",
+      "source_severity": null,
+      "expected": false,
+      "status": "active",
+      "starts_at": "2026-01-15T10:59:00Z",
+      "replicas": [],
+      "rule_id": "synthetic",
+      "reasons": [
+        "rule_matched"
+      ]
+    }
+  ]
+}

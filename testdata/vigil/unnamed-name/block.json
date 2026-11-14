@@ -1,0 +1,36 @@
+{
+  "apiVersion": "augur.vigil-block/v0",
+  "generated_at": "2026-01-15T12:00:00Z",
+  "policy_sha256": "4b72105466aa2f84e399336c5e31f5052fd5e0911f2662c31fed79df4fdb57f0",
+  "watchdog": {
+    "seen": true,
+    "last_seen": "2026-01-15T11:58:00Z"
+  },
+  "alertmanager_last_ok": "2026-01-15T12:00:00Z",
+  "counts": {
+    "total": 2,
+    "raising": {
+      "RED": 0,
+      "YELLOW": 1
+    },
+    "expected": 1,
+    "suppressed": 0
+  },
+  "alerts": [
+    {
+      "name": "unnamed",
+      "host": "unmapped",
+      "severity": "YELLOW",
+      "starts_at": "2026-01-15T11:55:00Z",
+      "rule_id": null,
+      "replicas": [
+        "unmapped"
+      ],
+      "reasons": [
+        "unmapped_host",
+        "unmatched_default"
+      ]
+    }
+  ],
+  "omitted": 0
+}
