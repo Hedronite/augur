@@ -1,0 +1,13 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    about: >-
+      Do not open an issue for a security problem. Use GitHub private
+      vulnerability reporting on this repository; see SECURITY.md.
+    url: https://github.com/Hedronite/augur/blob/main/SECURITY.md
+  - name: Question or usage help
+    about: >-
+      Read the README, docs/operations.md and docs/install.md first; if your
+      question is about installing or operating Augur, a discussion may fit
+      better than an issue.
+    url: https://github.com/Hedronite/augur/blob/main/docs/operations.md
