@@ -38,13 +38,12 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+// serve is still a stub (A2): it must exit 6, never a verdict.
 func TestStubsExitInternalNotGreen(t *testing.T) {
 	cases := []struct {
 		name string
 		args []string
 	}{
-		{"evaluate", []string{"evaluate", "--alerts", "a.json", "--policy", "p.yaml"}},
-		{"validate", []string{"validate", "--policy", "p.yaml"}},
 		{"serve", []string{"serve", "--policy", "p.yaml", "--alertmanager", "http://127.0.0.1:9093", "--out", "v.json"}},
 	}
 	for _, tc := range cases {

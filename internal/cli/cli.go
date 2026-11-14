@@ -37,7 +37,11 @@ func execute(root *cobra.Command, args []string, stdout, stderr io.Writer) (code
 	}
 	var ee *exitError
 	if errors.As(err, &ee) {
-		_, _ = fmt.Fprintf(stderr, "augur: %s\n", ee.msg)
+		// A verdict exit (0 to 2) and an error whose detail was already
+		// written (empty msg) print nothing here.
+		if ee.msg != "" {
+			_, _ = fmt.Fprintf(stderr, "augur: %s\n", ee.msg)
+		}
 		return ee.code
 	}
 	// Anything else is a usage error from the flag parser: unknown command or flag, missing flag.
@@ -62,8 +66,8 @@ func newRoot() *cobra.Command {
 	return root
 }
 
-// notImplemented is the A0 stub body. The commands exist so the CLI surface is
-// frozen and testable; their behaviour lands in A1 (evaluate, validate) and A2 (serve).
+// notImplemented is the stub body for serve, which lands in A2. It exits 6 so
+// that an unfinished command can never read as a verdict.
 func notImplemented(name, phase string) error {
 	return &exitError{code: ExitInternal, msg: fmt.Sprintf("%s is not implemented yet (planned for %s)", name, phase)}
 }
@@ -75,7 +79,9 @@ func newEvaluate() *cobra.Command {
 		Use:   "evaluate --alerts FILE --policy FILE [--now RFC3339] [--json|--quiet]",
 		Short: "Classify one saved Alertmanager alert set",
 		Args:  cobra.NoArgs,
-		RunE:  func(*cobra.Command, []string) error { return notImplemented("evaluate", "A1") },
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runEvaluate(cmd, alerts, policy, now, asJSON, quiet)
+		},
 	}
 	cmd.Flags().StringVar(&alerts, "alerts", "", "file holding the Alertmanager v2 /api/v2/alerts response")
 	cmd.Flags().StringVar(&policy, "policy", "", "policy file (augur.policy/v0, YAML)")
@@ -90,13 +96,15 @@ func newEvaluate() *cobra.Command {
 
 func newValidate() *cobra.Command {
 	var policy string
+	var quiet bool
 	cmd := &cobra.Command{
-		Use:   "validate --policy FILE",
+		Use:   "validate --policy FILE [--quiet]",
 		Short: "Check a policy file and report every error",
 		Args:  cobra.NoArgs,
-		RunE:  func(*cobra.Command, []string) error { return notImplemented("validate", "A1") },
+		RunE:  func(cmd *cobra.Command, _ []string) error { return runValidate(cmd, policy, quiet) },
 	}
 	cmd.Flags().StringVar(&policy, "policy", "", "policy file (augur.policy/v0, YAML)")
+	cmd.Flags().BoolVar(&quiet, "quiet", false, "print nothing on success; only set the exit code")
 	_ = cmd.MarkFlagRequired("policy")
 	return cmd
 }

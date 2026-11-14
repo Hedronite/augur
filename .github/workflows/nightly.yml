@@ -1,0 +1,51 @@
+name: nightly
+
+# Longer fuzz runs than the pull-request job: 10 minutes per target. Scheduled
+# workflows run on the default branch only. Read-only token, actions pinned by SHA.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: FuzzDecodeAM, pkg: ./internal/decode }
+          - { target: FuzzSniff, pkg: ./internal/decode }
+          - { target: FuzzDecodeAMSchema, pkg: ./internal/decode }
+          - { target: FuzzPolicyParse, pkg: ./internal/policy }
+          - { target: FuzzPolicySchema, pkg: ./internal/policy }
+          - { target: FuzzEvaluate, pkg: ./internal/engine }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - run: go test '${{ matrix.pkg }}' -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime 10m
+      # A failing run leaves the minimised input under testdata/fuzz. Print it so
+      # the failure can be reproduced and added to the corpus by hand.
+      - name: Show the failing input
+        if: failure()
+        run: |
+          git status --short
+          for f in $(git ls-files --others --exclude-standard | grep '/testdata/fuzz/'); do
+            echo "== $f"
+            head -c 4096 "$f"
+            echo
+          done
