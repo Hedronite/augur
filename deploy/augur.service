@@ -5,12 +5,18 @@
 #
 # The policy is read once at startup: `systemctl restart augur` to apply a
 # new one. The real policy lives off-repo, mode 0640, owned root:augur.
+#
+# With RestartSec=5s, StartLimitIntervalSec=300 and StartLimitBurst=5 allow
+# five restarts in five minutes; after that the unit stays failed and the
+# verdict file ages into Vigil's stale.
 
 [Unit]
 Description=Augur alert classifier (serve)
 Documentation=https://github.com/Hedronite/augur
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 Type=simple
