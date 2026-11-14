@@ -14,6 +14,27 @@ import (
 // ip4 builds a dotted quad at run time so the scrub has no address literal to flag.
 func ip4(a, b, c, d int) string { return fmt.Sprintf("%d.%d.%d.%d", a, b, c, d) }
 
+// AlertsURL joins the API path after any route prefix and sends all four states.
+func TestAlertsURL(t *testing.T) {
+	const q = "?active=true&silenced=true&inhibited=true&unprocessed=true"
+	for in, want := range map[string]string{
+		"http://127.0.0.1:9093":     "http://127.0.0.1:9093/api/v2/alerts" + q,
+		"http://127.0.0.1:9093/":    "http://127.0.0.1:9093/api/v2/alerts" + q,
+		"http://127.0.0.1:9093/am":  "http://127.0.0.1:9093/am/api/v2/alerts" + q,
+		"http://127.0.0.1:9093/am/": "http://127.0.0.1:9093/am/api/v2/alerts" + q,
+		"http://127.0.0.1:9093/a/b": "http://127.0.0.1:9093/a/b/api/v2/alerts" + q,
+		"http://[::1]:9093/am":      "http://[::1]:9093/am/api/v2/alerts" + q,
+	} {
+		u, err := ParseAlertmanagerURL(in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := AlertsURL(u); got != want {
+			t.Errorf("AlertsURL(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestCheckInterval(t *testing.T) {
 	for d, ok := range map[time.Duration]bool{
 		0: false, time.Second: false, 5*time.Second - 1: false, 5 * time.Second: true, 30 * time.Second: true,
