@@ -37,3 +37,6 @@ go.work.sum
 /augur
 /augur-*
 /dist/
+
+# release build output
+dist/
