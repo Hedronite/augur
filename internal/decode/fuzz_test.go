@@ -75,6 +75,17 @@ func seedFixtures(f *testing.F) {
 		}
 		f.Add(b)
 	}
+	// Keys are matched exactly, as the schema matches them. A mixed-case key on
+	// its own leaves "startsAt" missing, which the schema rejects; a mixed-case
+	// key beside the real one is an unknown field the schema accepts, so the
+	// decoder must ignore it even when its value is the wrong type. Both were
+	// once read as their lower-case twin by encoding/json.
+	f.Add([]byte(`[{"labels":{"alertname":"Watchdog","host":"host-a"},` +
+		`"StartsAt":"2026-01-15T11:00:00Z","status":{"state":"active"}}]`))
+	f.Add([]byte(`[{"labels":{"alertname":"NodeExporterDown","host":"host-a"},` +
+		`"startsAt":"2026-01-15T11:45:00Z","STARTSAT":{"nope":1},` +
+		`"status":{"state":"active"},"STATUS":{"state":"not-a-state"}}]`))
+
 	// The schema's date-time pattern rejects this; the decoder must too, or the
 	// differential fails. Kept as a seed after the pattern landed.
 	f.Add([]byte(`[{"labels":{"alertname":"Watchdog","host":"host-a"},` +
