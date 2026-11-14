@@ -63,7 +63,8 @@ if old != version:
     for dep in doc.get("dependencies", []):
         if dep["ref"] == old_ref:
             dep["ref"] = comp["bom-ref"]
-        dep["dependsOn"] = [comp["bom-ref"] if x == old_ref else x for x in dep.get("dependsOn", [])]
+        if "dependsOn" in dep:  # never add a key the tool did not write
+            dep["dependsOn"] = [comp["bom-ref"] if x == old_ref else x for x in dep["dependsOn"]]
     if old in json.dumps(doc):
         sys.exit("sbom: the old main version %r is still in the SBOM after pinning" % old)
 
