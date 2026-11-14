@@ -3,9 +3,12 @@
 # Real host names can't be listed here (the list would leak them).
 #
 # Private denylist: point AUGUR_SCRUB_EXTRA at newline-separated extended
-# regexes, or at a file of them. When it is empty, the extra step is skipped
-# and the script says so. Patterns and matched text are never echoed: a hit
-# is reported as file:line only.
+# regexes, or at a file of them. Each line is normalised (CR and trailing
+# whitespace stripped) and compile-checked; an invalid regex fails the run
+# loudly, naming only the source and line number, never the pattern. When
+# the variable is empty the extra step is skipped with a visible WARNING.
+# Patterns and matched text are never echoed: a hit is reported as
+# file:line only.
 set -euo pipefail
 
 if [ "${1:-}" = "--self-test" ]; then
@@ -20,11 +23,14 @@ if [ "${1:-}" = "--self-test" ]; then
   printf 'listen on [::1]:9093\n' > "$tmp/ok6.txt"
   printf '12:34:56 is a time, std::string is not an address, .locale is a word\n' > "$tmp/ok7.txt"
   printf 'see https://example.com/docs and localhost:9093\n' > "$tmp/ok8.txt"
-  git -C "$tmp" add ok.txt ok6.txt ok7.txt ok8.txt
+  printf 'the URL must be a literal loopback address in 127.0.0.0/8 or [::1]\n' > "$tmp/ok9.txt"
+  git -C "$tmp" add ok.txt ok6.txt ok7.txt ok8.txt ok9.txt
   out="$(cd "$tmp" && bash "$self" 2>&1 >/dev/null)" || { echo "self-test: clean file was flagged: $out" >&2; exit 1; }
 
-  # AUGUR_SCRUB_EXTRA unset: the script must say so and still pass.
-  (cd "$tmp" && bash "$self" >/dev/null 2>&1) || { echo "self-test: failed with no extra patterns" >&2; exit 1; }
+  # AUGUR_SCRUB_EXTRA unset: the script must warn visibly and still pass.
+  out="$(cd "$tmp" && bash "$self" 2>&1 >/dev/null)" || { echo "self-test: failed with no extra patterns" >&2; exit 1; }
+  case "$out" in *WARNING*) ;; *) echo "self-test: no WARNING when extra patterns are skipped" >&2; exit 1 ;; esac
+  case "$out" in *"::warning::"*) ;; *) echo "self-test: no ::warning:: annotation when skipped" >&2; exit 1 ;; esac
 
   # Every pattern class must catch its sample, with loopback noise to prove
   # the blanking does not hide a real address on the same line.
@@ -53,6 +59,32 @@ if [ "${1:-}" = "--self-test" ]; then
     && { echo "self-test: extra pattern missed" >&2; exit 1; }
   case "$out" in *sk-averyprivatedenylistvalue*) echo "self-test: extra pattern was echoed" >&2; exit 1 ;; esac
 
+  # The denylist lives outside the scanned tree, like the real one.
+  deny="$(mktemp)"
+  # A CRLF denylist must still match: the CR is stripped before compiling.
+  printf 'internal-name-x\r\n' > "$deny"
+  printf 'token internal-name-x 127.0.0.1\n' > "$tmp/bad.txt"
+  git -C "$tmp" add bad.txt
+  out="$(cd "$tmp" && AUGUR_SCRUB_EXTRA="$deny" bash "$self" 2>&1 >/dev/null)" \
+    && { echo "self-test: CRLF denylist pattern missed" >&2; exit 1; }
+  case "$out" in *"$deny"*) echo "self-test: denylist file path was echoed" >&2; exit 1 ;; esac
+
+  # A trailing space on a denylist line must not break the pattern.
+  printf 'internal-name-x \n' > "$deny"
+  out="$(cd "$tmp" && AUGUR_SCRUB_EXTRA="$deny" bash "$self" 2>&1 >/dev/null)" \
+    && { echo "self-test: trailing-space denylist pattern missed" >&2; exit 1; }
+  case "$out" in *"$deny"*) echo "self-test: denylist file path was echoed" >&2; exit 1 ;; esac
+  rm -f "$deny"
+
+  # An invalid ERE must fail the run loudly, with the source and line number
+  # only: never the pattern itself.
+  printf 'token zzz-nothing-matches-this 127.0.0.1\n' > "$tmp/bad.txt"
+  git -C "$tmp" add bad.txt
+  out="$(cd "$tmp" && AUGUR_SCRUB_EXTRA='(([badtoken' bash "$self" 2>&1 >/dev/null)" \
+    && { echo "self-test: invalid extra regex did not fail the run" >&2; exit 1; }
+  case "$out" in *badtoken*) echo "self-test: invalid regex was echoed" >&2; exit 1 ;; esac
+  case "$out" in *"line 1"*) ;; *) echo "self-test: invalid regex did not name the line" >&2; exit 1 ;; esac
+
   echo "scrub self-test: ok"
   exit 0
 fi
@@ -76,24 +108,46 @@ patterns=(
 # 2001:db8::1 is never mistaken for it.
 blank() {
   sed -E \
-    -e 's/(^|[^0-9.])(127\.0\.0\.1|0\.0\.0\.0)([^0-9.]|$)/\1_\3/g' \
+    -e 's/(^|[^0-9.])(127\.0\.0\.[01]|0\.0\.0\.0)([^0-9.]|$)/\1_\3/g' \
     -e 's/(^|[^0-9A-Fa-f:])::1([^0-9A-Fa-f:]|$)/\1_\2/g' \
     | sed -E \
-    -e 's/(^|[^0-9.])(127\.0\.0\.1|0\.0\.0\.0)([^0-9.]|$)/\1_\3/g' \
+    -e 's/(^|[^0-9.])(127\.0\.0\.[01]|0\.0\.0\.0)([^0-9.]|$)/\1_\3/g' \
     -e 's/(^|[^0-9A-Fa-f:])::1([^0-9A-Fa-f:]|$)/\1_\2/g'
+}
+
+# load_extra reads denylist lines on stdin: strips CR (CRLF files) and
+# trailing whitespace per line, skips empty lines, compile-checks each ERE
+# and fails the run on a bad one, naming the source and line number only.
+# The label is "env" or "file": never a path or the pattern itself.
+load_extra() {
+  local label="$1" n=0 line rc
+  while IFS= read -r line || [ -n "$line" ]; do
+    n=$((n + 1))
+    line="${line%$'\r'}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [ -n "$line" ] || continue
+    rc=0
+    grep -E -- "$line" /dev/null >/dev/null 2>&1 || rc=$?
+    if [ "$rc" -eq 2 ]; then
+      printf 'scrub: WARNING: invalid extended regex in private denylist (%s line %d); fix or remove it\n' "$label" "$n" >&2
+      exit 2
+    fi
+    patterns+=("$line")
+  done
 }
 
 extra="${AUGUR_SCRUB_EXTRA:-}"
 if [ -n "$extra" ]; then
   if [ -f "$extra" ]; then
-    while IFS= read -r line; do [ -n "$line" ] && patterns+=("$line"); done < "$extra"
+    load_extra file < "$extra"
     printf 'scrub: extra patterns loaded from file\n' >&2
   else
-    while IFS= read -r line; do [ -n "$line" ] && patterns+=("$line"); done <<< "$extra"
+    load_extra env <<< "$extra"
     printf 'scrub: extra patterns loaded from env\n' >&2
   fi
 else
-  printf 'scrub: AUGUR_SCRUB_EXTRA not set; extra patterns skipped\n' >&2
+  printf 'WARNING: AUGUR_SCRUB_EXTRA not set; private denylist patterns skipped\n' >&2
+  printf '::warning::AUGUR_SCRUB_EXTRA not set; private denylist patterns skipped\n' >&2
 fi
 
 fail=0
