@@ -89,6 +89,42 @@ jobs:
           sha256sum augur-1 augur-2
           cmp augur-1 augur-2
 
+  # The proof that the release is reproducible: the same commit, built twice in
+  # two different checkout paths with separate Go caches and GOPATHs, must give
+  # the same binary and the same tarball, byte for byte. The Go patch release
+  # is the one release.yml pins.
+  repro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GO_VERSION: '1.27.4'
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: src-one
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: elsewhere/src-two
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+      - name: Build linux/amd64 twice and compare binary and tarball
+        run: |
+          test "$(go env GOVERSION)" = "go${GO_VERSION}"
+          build() { # dir name
+            (cd "$1" && GOCACHE="$RUNNER_TEMP/gocache-$2" GOPATH="$RUNNER_TEMP/gopath-$2" \
+              scripts/release.sh v0.0.0-repro "$RUNNER_TEMP/out-$2" linux/amd64)
+            (cd "$RUNNER_TEMP/out-$2" && sha256sum bin/linux_amd64/augur augur_v0.0.0-repro_linux_amd64.tar.gz) > "$RUNNER_TEMP/sums-$2"
+          }
+          build src-one one
+          build elsewhere/src-two two
+          cat "$RUNNER_TEMP/sums-one" "$RUNNER_TEMP/sums-two"
+          diff "$RUNNER_TEMP/sums-one" "$RUNNER_TEMP/sums-two"
+
   scrub:
     runs-on: ubuntu-latest
     timeout-minutes: 10
