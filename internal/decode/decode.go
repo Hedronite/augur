@@ -281,7 +281,10 @@ func checkString(raw json.RawMessage, i int, field string) *ErrMalformed {
 }
 
 // checkStringMap enforces a declared object-of-strings property, such as
-// annotations. The values are never read and never output.
+// annotations. The values are never read and never output, and they need no
+// length bound of their own: the 16 MiB body cap that the caller enforces on
+// the whole document is what bounds annotation text, which is why this package
+// has no per-value limit.
 func checkStringMap(raw json.RawMessage, i int, field string) *ErrMalformed {
 	if len(raw) == 0 {
 		return nil

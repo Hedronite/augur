@@ -114,7 +114,15 @@ type verdictAlert struct {
 	Reasons  []string `json:"reasons"`
 }
 
-// FromVerdictJSON maps a verdict document to the Vigil entry and block.
+// FromVerdictJSON builds the block and the Vigil verdict entry from a verdict
+// document.
+//
+// It validates only the apiVersion and overall, on purpose: the rest of the
+// verdict is the caller's contract to check, and this function must not become
+// a second, looser validator of a document that has its own schema. The block
+// reads sources[0] only, which is correct while a verdict has exactly one
+// source; a second source would need a decision here, not a silent read of the
+// first.
 func FromVerdictJSON(data []byte) (Block, Entry, error) {
 	var v verdictDoc
 	if err := json.Unmarshal(data, &v); err != nil {
