@@ -34,6 +34,10 @@ Short version of the rollup:
 | `watchdog_missing` | YELLOW | No Watchdog in the snapshot; an empty array counts as not seen. |
 | `observability_blind` | RED | Watchdog silent or a source unreachable past the dead-man window (`serve` only). |
 
+## Vigil fields
+
+Vigil reads the verdict file and joins it as an authority: one `verdicts[]` entry — `source: augur`, state, `severity` set to `overall`, the top-level rollup reasons passed through, `observed_at` set to `generated_at` — plus a bounded `augur{}` block: the heartbeat state, `policy_sha256`, exact severity counts over every alert, and the raising alerts (at most 50, most severe and oldest first) with an `omitted` count. The block never changes `overall`, and Augur's per-source status lives only in Vigil's `sources[]`. The full mapping, the caps and the version rule are in [`docs/vigil.md`](docs/vigil.md); the block contract is [`schema/vigil-block.v0.json`](schema/vigil-block.v0.json).
+
 ## Exit codes
 
 | Code | Meaning |
