@@ -63,11 +63,11 @@ Running `release.yml` through `workflow_dispatch` (input `version`, default
 uploads everything as a workflow artifact named `release-dry-run`. It creates
 no release and no attestation.
 
-Tarballs and binaries from a dry run are byte-identical to a tag run on the
-same commit. The **SBOMs differ in exactly one field** — the main component's
-version, which is stamped from the VCS state — so the `SHA256SUMS` differs on
-its SBOM lines. Compare **tarball sha256s**, never a whole `SHA256SUMS`,
-between a dry run and a tag run.
+Everything a dry run produces is byte-identical to the tag run on the same
+commit: the tarballs, the binaries, the SBOMs and the whole `SHA256SUMS`. (The
+SBOM tool stamps the main component's version from the VCS state, so
+`scripts/sbom.sh` pins it to the version being built; without that, a dry run
+and a tag run would differ in that one field.)
 
 ## Rebuild it yourself
 
@@ -94,8 +94,10 @@ curl -fsSL -o /tmp/augur-published/SHA256SUMS \
 
 The comparison that must hold is the **tarball lines**: no output from `diff`
 means the bytes are identical. A difference means the bytes differ: check the
-Go patch version first. Do not compare the SBOM lines or the whole file; the
-SBOM lines match only when your VCS state matches the tag run's.
+Go patch version first. A local `make release` writes only the tarballs; the
+SBOM lines of the published `SHA256SUMS` come from `make sbom`, which needs
+`cyclonedx-gomod` at the pinned version (see above) and is not part of the
+rebuild check.
 
 ## Verify what you downloaded
 
