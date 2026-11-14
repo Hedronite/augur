@@ -10,7 +10,8 @@
 #   targets  default: linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 #
 # SOURCE_DATE_EPOCH (seconds) sets every file time in the archives; it defaults
-# to the commit time of HEAD. The flags below are the ones `make build` uses.
+# to the commit time of HEAD, and the script stops if it has neither (a source
+# archive with no .git): a silent fallback would change the bytes. The flags below are the ones `make build` uses.
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
@@ -34,7 +35,15 @@ root="$(pwd)"
 mkdir -p "$out"
 out="$(cd "$out" && pwd)"
 
-epoch="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}"
+epoch="${SOURCE_DATE_EPOCH:-}"
+if [ -z "$epoch" ]; then
+  epoch="$(git log -1 --format=%ct 2>/dev/null || true)"
+fi
+if [ -z "$epoch" ]; then
+  echo "release: SOURCE_DATE_EPOCH is not set and there is no git history to take the commit time from." >&2
+  echo "release: set SOURCE_DATE_EPOCH to the tagged commit's time in seconds, or build from a git checkout." >&2
+  exit 2
+fi
 if ! printf '%s' "$epoch" | grep -Eq '^[0-9]+$'; then
   echo "release: SOURCE_DATE_EPOCH '$epoch' is not a number of seconds" >&2
   exit 2
