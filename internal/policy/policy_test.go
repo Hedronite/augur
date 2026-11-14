@@ -510,7 +510,7 @@ func TestRefusedYAMLFeatures(t *testing.T) {
 			if len(errs) == 0 {
 				t.Fatalf("Parse accepted a policy with a %s", name)
 			}
-			if errs[0].Path != tc.path && !(tc.path == "" && errs[0].Path == "") {
+			if errs[0].Path != tc.path {
 				t.Fatalf("Path = %q, want %q", errs[0].Path, tc.path)
 			}
 			if !strings.Contains(errs[0].Problem, tc.problem) {
