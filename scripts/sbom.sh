@@ -2,7 +2,7 @@
 # Write one CycloneDX SBOM per release target and check each against its binary.
 # Needs cyclonedx-gomod on PATH (the release workflow installs the pinned
 # version; see docs/release.md) and the binaries scripts/release.sh left in
-# OUTDIR/bin. Pins each SBOM's main component version to VERSION and rewrites
+# OUTDIR/bin. Makes each SBOM host-independent (see below) and rewrites
 # SHA256SUMS to cover the SBOMs too.
 #
 # Usage: scripts/sbom.sh VERSION OUTDIR [os/arch ...]
@@ -30,21 +30,46 @@ for target in "$@"; do
   file="$out/augur_${version}_${os}_${arch}.sbom.cdx.json"
   CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" cyclonedx-gomod app -json -noserial -notimestamp -std \
     -output-version 1.6 -main ./cmd/augur -output "$file" .
-  # cyclonedx-gomod stamps the main component's version from the VCS state: the
-  # tag on a tagged checkout, a pseudo-version on any other commit. Pin it to
-  # VERSION, so a dry run on a commit and the tag run on that commit write the
-  # same bytes (and the same SHA256SUMS). Plain text replacement, no re-encoding.
+  # Normalise the two things in the tool's output that depend on where it ran,
+  # so the same commit gives the same SBOM bytes on any host:
+  #  - metadata.tools[].hashes: the digests of the cyclonedx-gomod binary that
+  #    ran (it differs per build platform); the tool name and version stay.
+  #  - the main module's version, which the tool stamps from the VCS state (the
+  #    tag on a tagged checkout, a pseudo-version on any other commit): pinned
+  #    to VERSION in metadata.component (version, purl, bom-ref) and in the
+  #    dependency graph entry for that bom-ref, and nowhere else. The script
+  #    fails if the old version is still anywhere in the file afterwards.
   python3 -I - "$file" "$version" <<'PY'
 import json, sys
 path, version = sys.argv[1], sys.argv[2]
-text = open(path, encoding="utf-8").read()
-cur = json.loads(text)["metadata"]["component"].get("version", "")
-if not cur.startswith("v"):
-    sys.exit("sbom: the main component has no version to pin: %r" % cur)
-if cur != version:
-    text = text.replace(cur, version)
-    json.loads(text)  # still valid JSON
-    open(path, "w", encoding="utf-8").write(text)
+with open(path, encoding="utf-8") as f:
+    doc = json.load(f)
+
+tools = doc["metadata"]["tools"]
+if isinstance(tools, dict):  # CycloneDX 1.5+ may nest them under "components"
+    tools = tools.get("components", []) + tools.get("services", [])
+for tool in tools:
+    tool.pop("hashes", None)
+
+comp = doc["metadata"]["component"]
+old = comp.get("version", "")
+if not old.startswith("v"):
+    sys.exit("sbom: the main component has no version to pin: %r" % old)
+if old != version:
+    old_ref = comp["bom-ref"]
+    comp["version"] = version
+    comp["purl"] = comp["purl"].replace("@" + old, "@" + version, 1)
+    comp["bom-ref"] = old_ref.replace("@" + old, "@" + version, 1)
+    for dep in doc.get("dependencies", []):
+        if dep["ref"] == old_ref:
+            dep["ref"] = comp["bom-ref"]
+        dep["dependsOn"] = [comp["bom-ref"] if x == old_ref else x for x in dep.get("dependsOn", [])]
+    if old in json.dumps(doc):
+        sys.exit("sbom: the old main version %r is still in the SBOM after pinning" % old)
+
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(doc, f, indent=2)
+    f.write("\n")
 PY
   "$root/scripts/sbom-check.sh" "$out/bin/${os}_${arch}/augur" "$file"
   echo "sbom: $(basename "$file")"
