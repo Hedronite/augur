@@ -69,8 +69,13 @@ SBOM tool records two things that depend on where it ran, and
 `scripts/sbom.sh` normalises both: the digests of the tool's own binary, which
 differ per build platform, are dropped from `metadata.tools` (its name and
 version stay); and the main component's version, which the tool stamps from
-the VCS state, is pinned to the version being built. With both, the SBOMs,
-and so the whole `SHA256SUMS`, are the same on any host.)
+the VCS state, is pinned to the version being built. The tool is run without a serial number so its output is
+reproducible, but the attestation action refuses a CycloneDX file that has no
+`serialNumber`, so the script adds one that is derived from the content:
+`urn:uuid:` plus a UUIDv5 over the sha256 of the SBOM exactly as written
+without that key. `python3 -I scripts/sbomtool.py accept <file>` recomputes it
+and applies the action's own acceptance rule. With all of this, the SBOMs, and
+so the whole `SHA256SUMS`, are the same on any host.)
 
 ## Rebuild it yourself
 
