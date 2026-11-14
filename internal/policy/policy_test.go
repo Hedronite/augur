@@ -463,3 +463,74 @@ func TestSlugRejectsLeadingDash(t *testing.T) {
 		parseOK(t, head+"replicas: [host-, r1]\nrules: []\n")
 	})
 }
+
+// TestRefusedYAMLFeatures: a policy is data an operator reviews, so the YAML
+// features that hide it from review are refused. JSON Schema cannot see any of
+// these, so the differential harness refuses the same documents through
+// strictParse; these rows and the seeds keep the two sides locked together.
+func TestRefusedYAMLFeatures(t *testing.T) {
+	const head = "schema: augur.policy/v0\ndefault: YELLOW\nwatchdog: {alertname: Watchdog}\nrules: []\n"
+	refuse := map[string]struct{ doc, path, problem string }{
+		"custom tag": {
+			"schema: augur.policy/v0\ndefault: YELLOW\nwatchdog:\n  alertname: !0 0\nrules: []\n",
+			"watchdog.alertname", "!0",
+		},
+		// A core tag is judged by the field it lands on, not by the feature gate:
+		// !!int passes the gate and then fails the string check for alertname.
+		"explicit retyping tag": {
+			"schema: augur.policy/v0\ndefault: YELLOW\nwatchdog:\n  alertname: !!int 5\nrules: []\n",
+			"watchdog.alertname", "must be a string",
+		},
+		"anchor": {
+			head + "first_class_hosts: &h [host-a]\n",
+			"first_class_hosts", "anchors are not allowed",
+		},
+		// An alias needs an anchor defined earlier in the document, and the walk
+		// reports the first offending feature, so the anchor is what surfaces.
+		"alias": {
+			head + "first_class_hosts: &h [host-a]\nreplicas: *h\n",
+			"first_class_hosts", "anchors are not allowed",
+		},
+		"merge key": {
+			"schema: augur.policy/v0\ndefault: YELLOW\nwatchdog:\n  <<: {alertname: Watchdog}\nrules: []\n",
+			"watchdog.<<", "merge keys are not allowed",
+		},
+		"duplicate key": {
+			"schema: augur.policy/v0\ndefault: YELLOW\ndefault: RED\nwatchdog: {alertname: Watchdog}\nrules: []\n",
+			"default", "duplicate key",
+		},
+		"second document": {
+			head + "---\nschema: augur.policy/v0\n",
+			"", "second YAML document",
+		},
+	}
+	for name, tc := range refuse {
+		t.Run(name, func(t *testing.T) {
+			_, errs := Parse([]byte(tc.doc))
+			if len(errs) == 0 {
+				t.Fatalf("Parse accepted a policy with a %s", name)
+			}
+			if errs[0].Path != tc.path && !(tc.path == "" && errs[0].Path == "") {
+				t.Fatalf("Path = %q, want %q", errs[0].Path, tc.path)
+			}
+			if !strings.Contains(errs[0].Problem, tc.problem) {
+				t.Fatalf("Problem = %q, want it to mention %q", errs[0].Problem, tc.problem)
+			}
+			if errs[0].Fix == "" {
+				t.Fatal("error has no fix text")
+			}
+		})
+	}
+
+	// !!timestamp is a core tag and the resolver assigns it to an unquoted
+	// RFC3339 value, which the shipped policies use for expires_at.
+	accept := map[string]string{
+		"unquoted expires_at": head + "holds:\n  - id: m\n    match: {host: host-a}\n" +
+			"    kind: announced_dark\n    expires_at: 2026-12-01T00:00:00Z\n",
+		"quoted expires_at": head + "holds:\n  - id: m\n    match: {host: host-a}\n" +
+			"    kind: announced_dark\n    expires_at: \"2026-12-01T00:00:00Z\"\n",
+	}
+	for name, doc := range accept {
+		t.Run("accepts "+name, func(t *testing.T) { parseOK(t, doc) })
+	}
+}

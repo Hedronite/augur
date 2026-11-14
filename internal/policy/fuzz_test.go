@@ -48,6 +48,13 @@ func compilePolicySchema(tb testing.TB) *jsonschema.Schema {
 // reports whether it conforms. checkable is false when the document cannot be
 // expressed as JSON at all (non-string keys), which the schema cannot judge.
 func schemaAcceptsPolicy(sch *jsonschema.Schema, doc []byte) (ok, checkable bool) {
+	// JSON Schema cannot see YAML features. Parse refuses anchors, aliases,
+	// merge keys, duplicate keys, a second document and any non-core tag, so the
+	// harness refuses them too: otherwise the two sides would disagree on
+	// documents that are only invalid as YAML.
+	if _, fe := strictParse(doc); fe != nil {
+		return false, true
+	}
 	var v any
 	if err := yaml.Unmarshal(doc, &v); err != nil {
 		return false, true
@@ -83,6 +90,24 @@ func seedPolicyCorpus(f *testing.F) {
 	if b, err := os.ReadFile("../../examples/policy.yaml"); err == nil {
 		f.Add(b)
 	}
+	// One seed per YAML feature a policy may not use. Parse refuses each, and the
+	// harness mirrors it, so the differential exercises both sides.
+	base := "schema: augur.policy/v0\ndefault: YELLOW\nwatchdog: {alertname: Watchdog}\nrules: []\n"
+	for _, extra := range []string{
+		"watchdog:\n  alertname: !0 0\n",                 // custom tag
+		"watchdog:\n  alertname: !!int 5\n",              // core tag that retypes a string field
+		"first_class_hosts: &h [host-a]\n",               // anchor
+		"first_class_hosts: &h [host-a]\nreplicas: *h\n", // alias
+		"watchdog:\n  <<: {alertname: Watchdog}\n",       // merge key
+		"default: RED\n",                                 // duplicate key
+		"---\nschema: augur.policy/v0\n",                 // second document
+	} {
+		f.Add([]byte(base + extra))
+	}
+	// The input CI reported, verbatim: a custom !0 tag on alertname.
+	f.Add([]byte("schema: augur.policy/v0\ndefault: YELLOW\n#000000000000000\nwatchdog:\n" +
+		"  alertname: !0 0\nrules:\n  - id: a\n    match:\n     0: 0A\n    severity: YELLOW\n"))
+
 	// The schema's date-time pattern rejects this expires_at; the parser must
 	// reject it too. Kept as a seed after the pattern landed.
 	f.Add([]byte(`schema: augur.policy/v0
