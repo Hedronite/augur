@@ -6,8 +6,8 @@
 | `1` | YELLOW |
 | `2` | RED |
 | `3` | Bad or unsupported input. Malformed JSON, an unsupported payload shape (an Alertmanager webhook message or a Grafana contact-point payload), or an empty/missing input file. No verdict is produced. |
-| `4` | Invalid policy. The policy fails schema validation, uses unknown keys, or sets `default: GREEN`. `validate` reports every error, not just the first. |
-| `5` | Configuration or startup error. For example `serve` with a non-loopback Alertmanager URL, or a missing output path. |
+| `4` | Invalid policy. The policy file was read but fails schema validation, uses unknown keys, or sets `default: GREEN`. `validate` reports every error, not just the first. |
+| `5` | Configuration or startup error. For example an unreadable `--policy` file (missing, no permission or over the size cap), an invalid `--now`, `serve` with a non-loopback Alertmanager URL, or a missing output path. |
 | `6` | Internal error. Panics are recovered and exit `6`, so a crash can never read as a RED verdict. |
 
 ## Contract

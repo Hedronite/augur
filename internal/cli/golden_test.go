@@ -199,16 +199,21 @@ func TestMissingFilesExitByRole(t *testing.T) {
 	if code, _, errs := run(t, "evaluate", "--alerts", "/nonexistent/a.json", "--policy", policy); code != ExitInput {
 		t.Errorf("missing alerts: exit %d (stderr %q)", code, errs)
 	}
-	if code, _, errs := run(t, "evaluate", "--alerts", alerts, "--policy", "/nonexistent/p.yaml"); code != ExitPolicy {
-		t.Errorf("missing policy: exit %d (stderr %q)", code, errs)
+	// An unreadable policy is a config error (5); exit 4 is for a policy that
+	// was read and is invalid.
+	if code, out, errs := run(t, "evaluate", "--alerts", alerts, "--policy", "/nonexistent/p.yaml"); code != ExitConfig || out != "" {
+		t.Errorf("missing policy: exit %d, stdout %q (stderr %q)", code, out, errs)
+	}
+	if code, _, errs := run(t, "validate", "--policy", "/nonexistent/p.yaml"); code != ExitConfig {
+		t.Errorf("validate, missing policy: exit %d (stderr %q)", code, errs)
 	}
 }
 
-// A policy file over the cap is a policy error.
+// A policy file over the cap cannot be read, so it is a config error.
 func TestPolicySizeCap(t *testing.T) {
 	alerts, _ := goodArgs(t)
 	p := writeTemp(t, "big.yaml", bytes.Repeat([]byte("#"), maxInputBytes+1))
-	if code, _, errs := run(t, "evaluate", "--alerts", alerts, "--policy", p); code != ExitPolicy {
+	if code, _, errs := run(t, "evaluate", "--alerts", alerts, "--policy", p); code != ExitConfig {
 		t.Errorf("exit %d (stderr %q)", code, errs)
 	}
 }
