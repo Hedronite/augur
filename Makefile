@@ -9,9 +9,9 @@ SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct 2>/dev/null || echo 0)
 export SOURCE_DATE_EPOCH
 LDFLAGS := -s -w -buildid= -X github.com/Hedronite/augur/internal/cli.version=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: gate build fmt-check tidy-check vet lint test race conformance vuln scrub scrub-selftest secrets clean
+.PHONY: gate build fmt-check tidy-check vet lint test race soak conformance vuln scrub scrub-selftest secrets clean
 
-gate: fmt-check tidy-check vet lint race conformance vuln scrub scrub-selftest secrets ## everything CI runs, locally
+gate: fmt-check tidy-check vet lint race soak conformance vuln scrub scrub-selftest secrets ## everything CI runs, locally
 
 build:
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o augur ./cmd/augur
@@ -33,6 +33,9 @@ test:
 
 race:
 	$(GO) test -race -count=1 ./...
+
+soak: ## serve leak check: 1000 polls of 4000 alerts, no -race
+	$(GO) test -count=1 -run '^TestSoak$$' ./internal/serve
 
 conformance:
 	$(GO) test -count=1 -run 'Conform|Schema|Strict|Fixtures|Vigil' ./internal/schema/... ./internal/vigilmap/...

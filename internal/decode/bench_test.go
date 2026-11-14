@@ -10,7 +10,7 @@ import (
 // benchmark at this size is the per-poll cost the loop actually pays.
 const bodyBudget = 16 << 20
 
-// BenchAlertNames are the real rule names; only the hosts are synthetic.
+// benchAlertNames are the real rule names; only the hosts are synthetic.
 var benchAlertNames = []string{
 	"Watchdog", "NodeExporterDown", "PeerPrometheusDown", "PeerPrometheusAbsent",
 	"SSHFailure", "DiskSpaceWarning", "DiskSpaceCritical", "TargetDown",
@@ -56,6 +56,25 @@ func BenchmarkDecodeAM16MiBDense(b *testing.B) {
 	}
 }
 
+// BenchmarkDecodeAM4000 is the serve cap: the body one poll at the cap has to
+// decode. It is the decode half of the poll budget.
+func BenchmarkDecodeAM4000(b *testing.B) {
+	data := realisticAlerts(4000)
+	b.SetBytes(int64(len(data)))
+	b.ReportAllocs()
+	b.Logf("4000-alert body: %d bytes", len(data))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		snap, err := DecodeAM(data)
+		if err != nil {
+			b.Fatalf("DecodeAM: %v", err)
+		}
+		if len(snap.Alerts) != 4000 {
+			b.Fatalf("decoded %d alerts", len(snap.Alerts))
+		}
+	}
+}
+
 // realisticBody builds an alerts array of about budget bytes with every field a
 // real Alertmanager alert carries.
 func realisticBody(tb testing.TB, budget int) []byte {
@@ -67,26 +86,46 @@ func realisticBody(tb testing.TB, budget int) []byte {
 		if i > 0 {
 			b.WriteByte(',')
 		}
-		name := benchAlertNames[i%len(benchAlertNames)]
-		host := benchHosts[i%len(benchHosts)]
-		replica := "r1"
-		if i%2 == 1 {
-			replica = "r2"
-		}
-		state := `{"state":"active"}`
-		if i%17 == 0 {
-			state = `{"state":"suppressed","silencedBy":["silence-` + strconv.Itoa(i) + `"]}`
-		}
-		b.WriteString(`{"labels":{"alertname":"` + name + `","host":"` + host +
-			`","instance":"` + host + `:9100","job":"node","replica":"` + replica +
-			`","severity":"warning"},"annotations":{"summary":"` + name + ` on ` + host +
-			`","description":"the exporter stopped reporting on ` + host + `"},"startsAt":"2026-01-15T11:` +
-			twoDigits(i%60) + `:00Z","endsAt":"0001-01-01T00:00:00Z","updatedAt":"2026-01-15T11:58:00Z","fingerprint":"` +
-			strconv.FormatInt(int64(i), 16) + `","generatorURL":"https://example.invalid/graph?g0.expr=up","status":` +
-			state + `}`)
+		b.WriteString(realisticOne(i))
 	}
 	b.WriteByte(']')
 	return []byte(b.String())
+}
+
+// realisticAlerts builds exactly n realistic alerts.
+func realisticAlerts(n int) []byte {
+	var b strings.Builder
+	b.Grow(n * 400)
+	b.WriteByte('[')
+	for i := 0; i < n; i++ {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(realisticOne(i))
+	}
+	b.WriteByte(']')
+	return []byte(b.String())
+}
+
+// realisticOne is one realistic alert, shared by both builders.
+func realisticOne(i int) string {
+	name := benchAlertNames[i%len(benchAlertNames)]
+	host := benchHosts[i%len(benchHosts)]
+	replica := "r1"
+	if i%2 == 1 {
+		replica = "r2"
+	}
+	state := `{"state":"active"}`
+	if i%17 == 0 {
+		state = `{"state":"suppressed","silencedBy":["silence-` + strconv.Itoa(i) + `"]}`
+	}
+	return `{"labels":{"alertname":"` + name + `","host":"` + host +
+		`","instance":"` + host + `:9100","job":"node","replica":"` + replica +
+		`","severity":"warning"},"annotations":{"summary":"` + name + ` on ` + host +
+		`","description":"the exporter stopped reporting on ` + host + `"},"startsAt":"2026-01-15T11:` +
+		twoDigits(i%60) + `:00Z","endsAt":"0001-01-01T00:00:00Z","updatedAt":"2026-01-15T11:58:00Z","fingerprint":"` +
+		strconv.FormatInt(int64(i), 16) + `","generatorURL":"https://example.invalid/graph?g0.expr=up","status":` +
+		state + `}`
 }
 
 // denseBody builds the smallest alert the schema accepts, repeated until the

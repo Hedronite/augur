@@ -31,6 +31,8 @@ jobs:
           go-version: ${{ matrix.go }}
       - run: go vet ./...
       - run: go test -race -count=1 ./...
+      - name: Soak (serve leak check, without -race)
+        run: go test -count=1 -run '^TestSoak$' ./internal/serve
 
   lint:
     runs-on: ubuntu-latest
