@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\n  \"version\": \"4\",\n  \"groupKey\": \"{}:{alertname=\\\"Watchdog\\\"}\",\n  \"truncatedAlerts\": 0,\n  \"status\": \"firing\",\n  \"receiver\": \"augur\",\n  \"groupLabels\": {\n    \"alertname\": \"Watchdog\"\n  },\n  \"commonLabels\": {\n    \"alertname\": \"Watchdog\"\n  },\n  \"alerts\": [\n    {\n      \"status\": \"firing\",\n      \"labels\": {\n        \"alertname\": \"Watchdog\"\n      },\n      \"startsAt\": \"2026-01-15T11:58:00Z\"\n    }\n  ]\n}\n")

@@ -22,9 +22,9 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 12. Age is `now - startsAt`, clamped at 0; a negative age adds `clock_skew` (`62`). For a merged alert the age is measured from the merged `starts_at`, so the hold reasons follow the latest reporting start: `node_exporter_within_hold` only appears while that merged age is inside `node_exporter_red_hold` (`52`).
 13. `alerts[]` sorts by `(host, name, starts_at)`; `reasons[]` and `replicas[]` sort ascending.
 14. Unknown alert fields are ignored (`64`); a reversed input order yields a byte-identical document (`65`).
-15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint. Every exit-4 fixture also declares `policy_schema`: `invalid` when the policy must fail `policy.v0.json` on its own, `valid` when only the engine can reject it (`79`, a regex that does not compile). `76` expects both offending field paths because `validate` reports every error, not just the first.
-16. `replicas:` declares the views whose alerts reach the source; unset means one unlabeled view. A declared replica absent from the input is **live and silent**, which splits the views (`54`), unless an active `PeerPrometheusDown`/`Absent` names it through `replica_label`, which makes it **lost** and lets a single past-hold report stand as RED (`55`). When `replicas` is unset, `replica_label` values still appear in `replicas[]` but are ignored for agreement: the merged alert is one view, so past the hold it is RED `node_exporter_down_single_view` (`56`).
-17. Output bounds. The verdict schema is not run at runtime, so the decoder must enforce the same limits itself: `name` must match `^[A-Za-z_][A-Za-z0-9_:]{0,127}$`, otherwise it is reported as `unnamed`; `source_severity` must match `^[a-z][a-z0-9_]{0,31}$`, otherwise it is `null`; each `replicas[]` value must match `^[a-z0-9-]{1,32}$`, otherwise `unmapped`; `rule_id` is a policy id, already bounded by the policy schema. No other input string reaches the output.
+15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint. Every exit-4 fixture also declares `policy_schema`: `invalid` when the policy must fail `policy.v0.json` on its own, `valid` when only the engine can reject it (`79`, a regex that does not compile). For `invalid_policy`, `detail` is the **sorted comma-separated list of field paths** the parser must report, so `76` requires both `default` and `node_exporter_red_hold`: `validate` reports every error, not just the first.
+16. `replicas:` declares the views whose alerts reach the source; unset means one unlabeled view. A declared replica absent from the input is **live and silent**, which splits the views (`54`), unless an active `PeerPrometheusDown`/`Absent` names it through `replica_label`, which makes it **lost** and lets a single past-hold report stand as RED (`55`).
+17. Leaving `replicas` unset keeps one unlabeled view: the two replica reports merge into a single view, so a merged age past the hold is RED `node_exporter_down_single_view` rather than a two-view reason (`56`).
 
 ## Fixtures
 
@@ -53,12 +53,20 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `51-node-exporter-two-replicas-agree` | evaluate | Two views that agree past the hold are RED | RED — (alerts raise) |
 | `52-node-exporter-two-replicas-disagree` | evaluate | Two views that disagree are not RED; the merged age is the latest reporting start | YELLOW — (alerts raise) |
 | `53-worst-rule-wins` | evaluate | Every matching rule applies; worst severity wins and rule_id names the deciding rule | RED — (alerts raise) |
+| `54-node-exporter-declared-replica-silent` | evaluate | A declared replica that is live and silent splits the views | YELLOW — (alerts raise) |
+| `55-node-exporter-declared-replica-lost` | evaluate | A declared replica that is lost does not block RED | RED — (alerts raise) |
+| `56-node-exporter-replicas-unset-both-past-hold` | evaluate | Unset replicas is single-view mode, not no agreement needed: both reports are one view past the hold | RED — (alerts raise) |
+| `57-node-exporter-lost-replica-within-hold` | evaluate | A lost replica removes the agreement requirement but not the hold | YELLOW — (alerts raise) |
 | `60-unmatched-alert` | evaluate | An unmatched alert takes the fail-closed default; source_severity is preserved | YELLOW — (alerts raise) |
 | `61-unmapped-host` | evaluate | A host label that fails the slug pattern is reported unmapped and never escalates | YELLOW — (alerts raise) |
 | `62-clock-skew` | evaluate | startsAt in the future clamps age to zero and reports clock_skew | YELLOW — (alerts raise) |
 | `63-instance-fallback` | evaluate | With no host label, instance supplies the host and still reaches the first-class escalation | RED — (alerts raise) |
 | `64-unknown-fields-ignored` | evaluate | Unknown alert fields are ignored, so an Alertmanager upgrade does not change the verdict | YELLOW — (alerts raise) |
 | `65-order-invariance` | evaluate | Reversing the input order gives a byte-identical document (same alerts and policy as 51) | RED — (alerts raise) |
+| `66-default-red-unmatched` | evaluate | A RED default classifies an unmatched alert as RED | RED — (alerts raise) |
+| `67-unprocessed-treated-active` | evaluate | An unprocessed alert counts like an active one, so it raises | YELLOW — (alerts raise) |
+| `68-host-label-override` | evaluate | host_label override: the host comes from the configured label, not host | RED — (alerts raise) |
+| `69-replica-label-override` | evaluate | replica_label override: both declared replicas report through the configured label | RED — (alerts raise) |
 | `70-reject-webhook-v4` | evaluate | Alertmanager webhook v4 payload is rejected with a typed error | exit 3 unsupported_payload |
 | `71-reject-grafana` | evaluate | Grafana contact-point payload is rejected with a typed error | exit 3 unsupported_payload |
 | `72-reject-malformed-json` | evaluate | Truncated JSON is an input error, never a verdict | exit 3 invalid_input |
@@ -67,11 +75,6 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `75-policy-unknown-key` | evaluate | Unknown policy keys are errors | exit 4 invalid_policy |
 | `76-policy-reports-all` | validate | validate reports every policy error, not just the first | exit 4 invalid_policy |
 | `77-policy-bad-duration` | validate | A duration outside the accepted grammar is an error naming the field | exit 4 invalid_policy |
-| `54-node-exporter-declared-replica-silent` | evaluate | A declared replica that is live and silent splits the views | YELLOW — (alerts raise) |
-| `55-node-exporter-declared-replica-lost` | evaluate | A declared replica that is lost does not block RED | RED — (alerts raise) |
-| `56-node-exporter-replicas-unset-both-past-hold` | evaluate | `replicas` unset: r1 and r2 labels are listed in `replicas[]` but ignored for agreement, so the merged alert is one view and past the hold is RED single_view | RED — (alerts raise) |
-| `66-default-red-unmatched` | evaluate | A RED default classifies an unmatched alert as RED | RED — (alerts raise) |
-| `67-unprocessed-treated-active` | evaluate | An unprocessed alert counts like an active one, so it raises | YELLOW — (alerts raise) |
 | `78-policy-unknown-rule-key` | evaluate | An unknown key nested in a rule is an error | exit 4 invalid_policy |
 | `79-policy-bad-regex` | validate | A matcher regex that does not compile is a policy error; the schema cannot see it, so validate must compile it | exit 4 invalid_policy |
 
@@ -104,6 +107,10 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | Merged age within the hold | `52` |
 | A declared replica is live and silent | `54` |
 | A declared replica is lost and does not block RED | `55` |
+| Unset `replicas` means one view | `56` |
+| A lost replica removes the agreement requirement but not the hold | `57` |
+| `host_label` override | `68` |
+| `replica_label` override | `69` |
 | Unknown key nested in a rule | `78` |
 | A matcher regex that does not compile | `79` |
 | Unknown fields ignored | `64` |
