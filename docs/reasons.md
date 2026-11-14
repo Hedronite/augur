@@ -5,6 +5,19 @@ must be added to [`schema/verdict.v0.json`](../schema/verdict.v0.json) before th
 engine can emit it, and the same enum is shared by the top-level rollup and
 per-alert reasons.
 
+## Renames (2026-11-14)
+
+Three published codes shared their names with codes Vigil adds to a verdict's
+`reasons[]`, where the two meanings differ. They were renamed before any
+consumer existed. No Augur code equals one of Vigil's own codes.
+
+| Old code | New code | Where |
+| --- | --- | --- |
+| `source_unreachable` | `alertmanager_unreachable` | rollup |
+| `source_stale` | `alertmanager_stale` | rollup |
+| `clock_skew` (dead-man tracker: the evaluation clock appeared to run backwards) | `evaluation_clock_backwards` | rollup, `serve` only |
+| `clock_skew` (per alert: `starts_at` in the future) | `alert_clock_skew` | per alert |
+
 ## Top-level rollup (`reasons[]` in `augur.verdict/v0`)
 
 | Code | Severity effect | Meaning |
@@ -12,8 +25,9 @@ per-alert reasons.
 | `watchdog_only` | GREEN | A Watchdog heartbeat was seen and nothing else is firing. GREEN requires this heartbeat. |
 | `watchdog_missing` | YELLOW | No Watchdog alert in the snapshot. An empty input array counts as not seen. Well-formed but blind input is a verdict, not an error. |
 | `observability_blind` | RED | The Watchdog has not been seen, or a source has been unreachable, for longer than the policy's `deadman_window`. Produced by `serve` only. |
-| `source_unreachable` | none by itself | A configured source could not be reached at classification time. Combined with a missed heartbeat past `deadman_window` it contributes to `observability_blind`. |
-| `source_stale` | none by itself | A source was reached but is not producing current data. |
+| `alertmanager_unreachable` | none by itself | The Alertmanager source could not be reached at classification time. Combined with a missed heartbeat past `deadman_window` it contributes to `observability_blind`. |
+| `alertmanager_stale` | none by itself | The Alertmanager source was reached but is not producing current data: the Watchdog's `updatedAt` is older than `deadman_window`. |
+| `evaluation_clock_backwards` | state | `serve` only: the clock appeared to run backwards since the last observation. Elapsed time is treated as zero and the state never moves backwards. |
 
 ## Per-alert codes (`alerts[].reasons[]`)
 
@@ -32,8 +46,8 @@ per-alert reasons.
 | `node_exporter_down_single_view` | RED | A first-class host's `NodeExporterDown` is still active past its hold as seen by one view: single-replica mode, or a declared replica that does not report it because it is lost, with every reporting replica past the hold. A lost replica does not block RED. |
 | `node_exporter_down_both_views` | RED | The same alert confirmed: every declared replica reports it and the merged age is past the hold. |
 | `node_exporter_views_split` | YELLOW | A declared replica is live and does not report the alert while another replica does. A path problem on one side alone, with a healthy peer, stays YELLOW. |
-| `clock_skew` | state | The alert's `starts_at` is in the future; hold age is clamped at 0. |
-| `unmapped_host` | state | The host label is missing or is not a valid slug (`^[a-z0-9-]{1,32}$`); the alert's `host` field is the literal value `unmapped`. Raw label values are never echoed. |
+| `alert_clock_skew` | state | The alert's `starts_at` is in the future; hold age is clamped at 0. |
+| `unmapped_host` | state | The host label is missing or is not a valid slug (`^[a-z0-9][a-z0-9-]{0,31}$`); the alert's `host` field is the literal value `unmapped`. Raw label values are never echoed. |
 
 ## The replicas rule
 
@@ -57,8 +71,8 @@ unset, there is one unlabeled view (single-replica mode).
 
 ## Semantics
 
-- A single alert can stack codes, for example `rule_matched` + `clock_skew`, or a
-  hold code alongside a state code.
+- A single alert can stack codes, for example `rule_matched` + `alert_clock_skew`, or
+  a hold code alongside a state code.
 - When a `NodeExporterDown` alert passes the hold and escalates to RED, the RED code
   (`node_exporter_down_single_view` or `node_exporter_down_both_views`) replaces
   `node_exporter_within_hold` on that alert.

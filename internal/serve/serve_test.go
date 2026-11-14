@@ -332,7 +332,7 @@ func TestUnreachableNeverReusesAlertsThenBlindThenRecovers(t *testing.T) {
 	}
 	f.down.Store(true)
 	v := h.tick(20 * time.Second)
-	if v.Overall != "YELLOW" || !has(v.Reasons, "source_unreachable") || !has(v.Reasons, "watchdog_missing") ||
+	if v.Overall != "YELLOW" || !has(v.Reasons, "alertmanager_unreachable") || !has(v.Reasons, "watchdog_missing") ||
 		v.Sources[0].State != "unreachable" || len(v.Alerts) != 0 || v.Watchdog.Seen || v.Sources[0].AlertCount != 0 {
 		t.Fatalf("unreachable: %+v", v)
 	}
@@ -343,7 +343,7 @@ func TestUnreachableNeverReusesAlertsThenBlindThenRecovers(t *testing.T) {
 	if v := h.tick(5*time.Minute + 9*time.Second); v.Overall != "YELLOW" {
 		t.Fatalf("just inside the window: %+v", v)
 	}
-	if v := h.tick(5*time.Minute + 10*time.Second); v.Overall != "RED" || !has(v.Reasons, "observability_blind") || !has(v.Reasons, "source_unreachable") {
+	if v := h.tick(5*time.Minute + 10*time.Second); v.Overall != "RED" || !has(v.Reasons, "observability_blind") || !has(v.Reasons, "alertmanager_unreachable") {
 		t.Fatalf("at the window: %+v", v)
 	}
 	f.down.Store(false)
@@ -387,7 +387,7 @@ func TestFailedPollKinds(t *testing.T) {
 			h := startHarness(t, nil)
 			h.am.set(c.handler)
 			v := h.tick(10 * time.Second)
-			if v.Overall != "YELLOW" || v.Sources[0].State != "unreachable" || !has(v.Reasons, "source_unreachable") || len(v.Alerts) != 0 {
+			if v.Overall != "YELLOW" || v.Sources[0].State != "unreachable" || !has(v.Reasons, "alertmanager_unreachable") || len(v.Alerts) != 0 {
 				t.Fatalf("%+v", v)
 			}
 			if !strings.Contains(h.logs.String(), `"error_kind":"`+c.kind+`"`) {
@@ -440,7 +440,7 @@ func TestStaleWatchdog(t *testing.T) {
 		return []string{h.am.watchdog(6 * time.Minute), h.am.alert("PeerPrometheusDown", "host-b", "2026-01-15T11:59:00Z", "")}
 	})
 	v := h.tick(time.Second)
-	if v.Overall != "YELLOW" || v.Sources[0].State != "stale" || !has(v.Reasons, "source_stale") || !has(v.Reasons, "watchdog_missing") ||
+	if v.Overall != "YELLOW" || v.Sources[0].State != "stale" || !has(v.Reasons, "alertmanager_stale") || !has(v.Reasons, "watchdog_missing") ||
 		v.Watchdog.Seen || v.Sources[0].AlertCount != 2 || len(v.Alerts) != 1 {
 		t.Fatalf("%+v", v)
 	}
@@ -454,7 +454,7 @@ func TestStaleWatchdog(t *testing.T) {
 		t.Fatalf("past the window: %+v", v)
 	}
 	// Still stale at the dead-man window: RED.
-	if v := h.tick(8 * time.Minute); v.Overall != "RED" || !has(v.Reasons, "observability_blind") || !has(v.Reasons, "source_stale") {
+	if v := h.tick(8 * time.Minute); v.Overall != "RED" || !has(v.Reasons, "observability_blind") || !has(v.Reasons, "alertmanager_stale") {
 		t.Fatalf("%+v", v)
 	}
 }

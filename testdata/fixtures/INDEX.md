@@ -9,7 +9,7 @@ Every `expected.json` pins `policy_sha256` to the sha256 of that directory's `po
 The spec fixes the outcome; these are the details the spec leaves open, frozen here so A1 has one target.
 
 1. `evaluate` reports a single source: `{"id":"file","state":"ok","last_ok":<now>,"alert_count":<len(alerts.json)>}`.
-2. Top-level `reasons[]` carries heartbeat and source conditions only (`watchdog_only`, `watchdog_missing`, `observability_blind`, `source_unreachable`, `source_stale`). When alerts alone drive the severity, it is empty; `alerts[].reasons[]` explains the rest.
+2. Top-level `reasons[]` carries heartbeat and source conditions only (`watchdog_only`, `watchdog_missing`, `observability_blind`, `alertmanager_unreachable`, `alertmanager_stale`). When alerts alone drive the severity, it is empty; `alerts[].reasons[]` explains the rest.
 3. Any alert named by `watchdog.alertname` sets `watchdog.seen`, with `last_seen` equal to that alert's `updatedAt`. An empty array means not seen.
 4. The Watchdog appears in `alerts[]` with severity `GREEN`, `expected: true`, `rule_id: null` and reason `heartbeat` (plus `silenced` when suppressed). It never takes `unmatched_default`.
 5. `rule_matched` accompanies every alert a rule matched, including held and suppressed ones. `rule_id` names the rule that decided the final severity, which is the worst one when several match. `rule_id` is `null` exactly when `unmatched_default` is present.
@@ -19,7 +19,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 9. `overall` is the worst severity among alerts that are neither expected nor suppressed, floored at `YELLOW` when the heartbeat is missing (`12`).
 10. Alerts that share `(name, host)` across replica labels merge into one entry: `replicas[]` is the sorted distinct set of views that reported, `starts_at` is the **latest** reporting start (the moment every reporting view agreed, so age stays truthful), and severity is the worst (`51`, `52`).
 11. `host` is `labels[host_label]`, falling back to `labels.instance`. A value failing `^[a-z0-9-]{1,32}$` becomes `unmapped` with reason `unmapped_host`, and an unmapped host is never first-class, so it never escalates (`61`).
-12. Age is `now - startsAt`, clamped at 0; a negative age adds `clock_skew` (`62`). For a merged alert the age is measured from the merged `starts_at`, so the hold reasons follow the latest reporting start: `node_exporter_within_hold` only appears while that merged age is inside `node_exporter_red_hold` (`52`).
+12. Age is `now - startsAt`, clamped at 0; a negative age adds `alert_clock_skew` (`62`). For a merged alert the age is measured from the merged `starts_at`, so the hold reasons follow the latest reporting start: `node_exporter_within_hold` only appears while that merged age is inside `node_exporter_red_hold` (`52`).
 13. `alerts[]` sorts by `(host, name, starts_at)`; `reasons[]` and `replicas[]` sort ascending.
 14. Unknown alert fields are ignored (`64`); a reversed input order yields a byte-identical document (`65`).
 15. For `expected_error.json`, `exit` and `code` are the contract (`3` input, `4` policy). `detail` is a hint. Every exit-4 fixture also declares `policy_schema`: `invalid` when the policy must fail `policy.v0.json` on its own, `valid` when only the engine can reject it (`79`, a regex that does not compile). For `invalid_policy`, `detail` is the **sorted comma-separated list of field paths** the parser must report, so `76` requires both `default` and `node_exporter_red_hold`: `validate` reports every error, not just the first.
@@ -59,7 +59,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | `57-node-exporter-lost-replica-within-hold` | evaluate | A lost replica removes the agreement requirement but not the hold | YELLOW — (alerts raise) |
 | `60-unmatched-alert` | evaluate | An unmatched alert takes the fail-closed default; source_severity is preserved | YELLOW — (alerts raise) |
 | `61-unmapped-host` | evaluate | A host label that fails the slug pattern is reported unmapped and never escalates | YELLOW — (alerts raise) |
-| `62-clock-skew` | evaluate | startsAt in the future clamps age to zero and reports clock_skew | YELLOW — (alerts raise) |
+| `62-clock-skew` | evaluate | startsAt in the future clamps age to zero and reports alert_clock_skew | YELLOW — (alerts raise) |
 | `63-instance-fallback` | evaluate | With no host label, instance supplies the host and still reaches the first-class escalation | RED — (alerts raise) |
 | `64-unknown-fields-ignored` | evaluate | Unknown alert fields are ignored, so an Alertmanager upgrade does not change the verdict | YELLOW — (alerts raise) |
 | `65-order-invariance` | evaluate | Reversing the input order gives a byte-identical document (same alerts and policy as 51) | RED — (alerts raise) |
@@ -99,7 +99,7 @@ The spec fixes the outcome; these are the details the spec leaves open, frozen h
 | Unmatched alert takes the default | `60` |
 | Host slug pattern, else `unmapped` | `61` |
 | `instance` fallback | `63` |
-| Hold age, clamp and `clock_skew` | `62`, plus every hold fixture |
+| Hold age, clamp and `alert_clock_skew` | `62`, plus every hold fixture |
 | Worst matching rule wins | `53` |
 | RED default applies to an unmatched alert | `66` |
 | `unprocessed` is classified like `active` | `67` |

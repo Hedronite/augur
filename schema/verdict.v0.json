@@ -23,7 +23,7 @@
     "generated_at": {
       "type": "string",
       "format": "date-time",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
       "description": "RFC3339 UTC instant at which the verdict was produced."
     },
     "time_source": {
@@ -54,7 +54,7 @@
         "last_seen": {
           "type": ["string", "null"],
           "format": "date-time",
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
           "description": "updatedAt of the Watchdog alert, RFC3339 UTC, or null when not seen. A silenced Watchdog still counts as a heartbeat."
         }
       }
@@ -79,12 +79,15 @@
     },
     "reason": {
       "enum": [
+        "alert_clock_skew",
+        "alertmanager_stale",
+        "alertmanager_unreachable",
         "announced_dark_expired",
-        "clock_skew",
+        "evaluation_clock_backwards",
+        "heartbeat",
         "held_announced_dark",
         "held_expected_dark",
         "held_known",
-        "heartbeat",
         "inhibited",
         "node_exporter_down_both_views",
         "node_exporter_down_single_view",
@@ -93,10 +96,8 @@
         "observability_blind",
         "rule_matched",
         "silenced",
-        "source_stale",
-        "source_unreachable",
-        "unmatched_default",
         "unmapped_host",
+        "unmatched_default",
         "watchdog_missing",
         "watchdog_only"
       ],
@@ -126,7 +127,7 @@
         "last_ok": {
           "type": ["string", "null"],
           "format": "date-time",
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
           "description": "RFC3339 UTC instant of the last successful read, or null when never ok."
         },
         "alert_count": {
@@ -159,7 +160,7 @@
         },
         "host": {
           "type": "string",
-          "pattern": "^[a-z0-9-]{1,32}$",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$",
           "description": "Host slug, or the literal value \"unmapped\" when the host label is missing or does not match the slug pattern. Raw label values are never echoed."
         },
         "severity": {
@@ -182,14 +183,14 @@
         "starts_at": {
           "type": "string",
           "format": "date-time",
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
           "description": "RFC3339 UTC start of the alert. Hold age is now - starts_at, clamped at 0; a negative value adds clock_skew."
         },
         "replicas": {
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^[a-z0-9-]{1,32}$"
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
           },
           "uniqueItems": true,
           "description": "Replica label values reporting this alert; the engine keys two-view rules on them. Sorted. A value that is not a slug is reported as the literal \"unmapped\"."

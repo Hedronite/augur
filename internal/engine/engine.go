@@ -77,9 +77,9 @@ func Evaluate(snap model.Snapshot, pol model.Policy, now time.Time) model.Verdic
 	switch snap.State {
 	case model.SourceOK:
 	case model.SourceStale:
-		rollup = append(rollup, model.ReasonSourceStale)
+		rollup = append(rollup, model.ReasonAlertmanagerStale)
 	default: // unreachable, and anything unknown fails closed
-		rollup = append(rollup, model.ReasonSourceUnreachable)
+		rollup = append(rollup, model.ReasonAlertmanagerUnreachable)
 	}
 
 	v.Overall = raising
@@ -285,7 +285,7 @@ func (e *evaluator) classify(ms []member, lost map[string]bool) model.VerdictAle
 	age := e.now.Sub(va.StartsAt)
 	if age < 0 {
 		age = 0
-		reasons = append(reasons, model.ReasonClockSkew)
+		reasons = append(reasons, model.ReasonAlertClockSkew)
 	}
 
 	// Holds and suppression are decided before escalation.

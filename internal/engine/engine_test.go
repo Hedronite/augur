@@ -205,9 +205,9 @@ func TestSourceStateFloorsYellow(t *testing.T) {
 		s := snap(watchdog())
 		s.State = st
 		v := engine.Evaluate(s, testPolicy(nil), now)
-		want := model.ReasonSourceUnreachable
+		want := model.ReasonAlertmanagerUnreachable
 		if st == model.SourceStale {
-			want = model.ReasonSourceStale
+			want = model.ReasonAlertmanagerStale
 		}
 		if v.Overall != model.Yellow || !has(v.Reasons, want) || has(v.Reasons, model.ReasonWatchdogOnly) {
 			t.Errorf("%s: overall %s reasons %v", st, v.Overall, v.Reasons)

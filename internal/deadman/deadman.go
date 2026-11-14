@@ -11,7 +11,7 @@ import (
 )
 
 // State is the result of one observation. Reasons are the rollup codes only
-// (watchdog_missing, observability_blind, source_unreachable, clock_skew); the
+// (watchdog_missing, observability_blind, alertmanager_unreachable, evaluation_clock_backwards); the
 // per-alert heartbeat reason belongs to the engine. A Severity of GREEN means
 // "GREEN-eligible": the heartbeat is current, and the alerts decide the rest.
 type State struct {
@@ -42,16 +42,16 @@ func New(window time.Duration, start time.Time) *Tracker {
 //   - otherwise (not seen, or the source unreachable): YELLOW watchdog_missing
 //     while less than the window has passed since the clock, RED
 //     observability_blind once the window or more has passed. An unreachable
-//     source also reports source_unreachable.
+//     source also reports alertmanager_unreachable.
 //   - a now earlier than the previous observation never moves the state
 //     backwards: it is treated as the previous observation time (zero elapsed
-//     time) and reports clock_skew.
+//     time) and reports evaluation_clock_backwards.
 func (t *Tracker) Observe(now time.Time, watchdogSeen, sourceOK bool) State {
 	var reasons []model.Reason
 
 	if t.observed && now.Before(t.lastObs) {
 		now = t.lastObs
-		reasons = append(reasons, model.ReasonClockSkew)
+		reasons = append(reasons, model.ReasonEvaluationClockBackwards)
 	}
 	t.lastObs = now
 	t.observed = true
@@ -65,7 +65,7 @@ func (t *Tracker) Observe(now time.Time, watchdogSeen, sourceOK bool) State {
 	}
 
 	if !sourceOK {
-		reasons = append(reasons, model.ReasonSourceUnreachable)
+		reasons = append(reasons, model.ReasonAlertmanagerUnreachable)
 	}
 	elapsed := now.Sub(t.clock)
 	if elapsed < 0 {

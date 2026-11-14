@@ -62,8 +62,8 @@ alerts as current would fail open.
 | Source state | What happened | Verdict effect |
 | --- | --- | --- |
 | `ok` | Poll succeeded; the snapshot is decoded and classified normally. | Per the watch rules; Watchdog seen → GREEN-eligible. |
-| `unreachable` | Connect error, timeout, non-200, refused redirect, over-cap body, or decode error. Classified as an empty snapshot: `alerts: []`. | YELLOW `source_unreachable` + `watchdog_missing`; RED `observability_blind` once `deadman_window` has passed since the last good heartbeat. |
-| `stale` | Poll succeeded, but the Watchdog's `updatedAt` is older than `deadman_window`: Alertmanager is up while the alert source stopped refreshing. The Watchdog counts as **not seen**. | `source_stale` added; the tracker proceeds as for a missed heartbeat → YELLOW, then RED past the window. `alert_count` still counts every alert read, including the dropped Watchdog. |
+| `unreachable` | Connect error, timeout, non-200, refused redirect, over-cap body, or decode error. Classified as an empty snapshot: `alerts: []`. | YELLOW `alertmanager_unreachable` + `watchdog_missing`; RED `observability_blind` once `deadman_window` has passed since the last good heartbeat. |
+| `stale` | Poll succeeded, but the Watchdog's `updatedAt` is older than `deadman_window`: Alertmanager is up while the alert source stopped refreshing. The Watchdog counts as **not seen**. | `alertmanager_stale` added; the tracker proceeds as for a missed heartbeat → YELLOW, then RED past the window. `alert_count` still counts every alert read, including the dropped Watchdog. |
 
 ## The dead-man window
 
@@ -72,7 +72,7 @@ alerts as current would fail open.
   `watchdog_missing`; for the window or longer → RED `observability_blind`.
 - A Watchdog seen again recovers straight away.
 - A clock that appears to run backwards never moves the state back: it is
-  treated as zero elapsed time and recorded as `clock_skew`.
+  treated as zero elapsed time and recorded as `evaluation_clock_backwards`.
 - There is no state file. A restart resets the dead-man clock: after a
   restart, the process treats the startup instant as the last observation,
   so a restart can briefly hold a verdict at YELLOW that would have been
