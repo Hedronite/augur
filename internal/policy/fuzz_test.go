@@ -101,6 +101,7 @@ func seedPolicyCorpus(f *testing.F) {
 		"watchdog:\n  <<: {alertname: Watchdog}\n",       // merge key
 		"default: RED\n",                                 // duplicate key
 		"---\nschema: augur.policy/v0\n",                 // second document
+		"---\nbad: [\n",                                  // trailing document that does not parse
 	} {
 		f.Add([]byte(base + extra))
 	}

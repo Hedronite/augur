@@ -83,10 +83,27 @@ func strictParse(data []byte) (*yaml.Node, *model.FieldError) {
 			Fix:     "check the indentation and quoting near this line",
 		}
 	}
+	// Anything but io.EOF after the first document is a refusal. A second
+	// document is one; a trailing document that does not even parse is another,
+	// and ignoring it would accept a file whose tail nobody can read.
 	var extra yaml.Node
-	if err := dec.Decode(&extra); err == nil {
+	switch err := dec.Decode(&extra); {
+	case errors.Is(err, io.EOF):
+		// No further document.
+	case err != nil:
 		return nil, &model.FieldError{
-			Line:    extra.Line,
+			Line:    yamlErrorLine(err),
+			Value:   excerpt(err.Error()),
+			Problem: "the document after the policy is not valid YAML",
+			Fix:     "remove everything after the --- separator",
+		}
+	case !isEmptyDocument(&extra):
+		line := extra.Line
+		if len(extra.Content) > 0 {
+			line = extra.Content[0].Line
+		}
+		return nil, &model.FieldError{
+			Line:    line,
 			Problem: "a second YAML document follows the policy",
 			Fix:     "keep one document per file; remove the --- separator and everything after it",
 		}
@@ -104,6 +121,15 @@ func strictParse(data []byte) (*yaml.Node, *model.FieldError) {
 	return root, nil
 }
 
+// isEmptyDocument reports a document with no content: a stray --- separator, or
+// nothing but comments after one. An explicit null document is content.
+func isEmptyDocument(n *yaml.Node) bool {
+	if n.Kind == 0 || len(n.Content) == 0 {
+		return true
+	}
+	return len(n.Content) == 1 && n.Content[0].Tag == "!!null" && n.Content[0].Value == ""
+}
+
 // checkYAMLFeatures walks the tree and returns the first refused feature.
 func checkYAMLFeatures(n *yaml.Node, path string) *model.FieldError {
 	if n.Anchor != "" {
@@ -111,11 +137,9 @@ func checkYAMLFeatures(n *yaml.Node, path string) *model.FieldError {
 			Problem: "anchors are not allowed in a policy",
 			Fix:     "write the value where it is used; an anchor hides it from review"}
 	}
-	if n.Kind == yaml.AliasNode {
-		return &model.FieldError{Line: n.Line, Path: path, Value: excerpt(n.Value),
-			Problem: "aliases are not allowed in a policy",
-			Fix:     "write the referenced value out in full"}
-	}
+	// No separate alias check: an alias can only refer to an anchor defined
+	// earlier in the same document, and the walk reaches that anchor first, so
+	// refusing the anchor already refuses every alias of it.
 	if n.Tag != "" && !coreTags[n.Tag] {
 		return &model.FieldError{Line: n.Line, Path: path, Value: excerpt(n.Value),
 			Problem: "the tag " + n.Tag + " is not allowed in a policy",
