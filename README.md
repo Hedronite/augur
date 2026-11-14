@@ -54,34 +54,77 @@ Only "0–2 versus 3 and up" is the public contract, and exit `1` collides with 
 
 ## Quick start
 
+Download a release, verify it, and classify an example alert set. The
+commands below are the ones the release-adoption check runs verbatim in a
+clean container; they need only `sha256sum`, `tar`, `curl` (or the `gh` CLI)
+and the tarball.
+
 ```sh
-# Classify one saved snapshot of the Alertmanager v2 /api/v2/alerts response.
-# Fixture 50 is a single-view snapshot whose NodeExporterDown is past its
-# hold: the command prints the verdict below and exits 2 (RED).
-augur evaluate \
-  --alerts testdata/fixtures/50-node-exporter-past-hold-single-view/alerts.json \
-  --policy testdata/fixtures/50-node-exporter-past-hold-single-view/policy.yaml \
-  --now "$(cat testdata/fixtures/50-node-exporter-past-hold-single-view/now.txt)"
+# 1. Download the release for your platform and the checksum file.
+curl -fsSLO https://github.com/Hedronite/augur/releases/download/v0.1.0/augur_v0.1.0_linux_amd64.tar.gz
+curl -fsSLO https://github.com/Hedronite/augur/releases/download/v0.1.0/SHA256SUMS
 
-# Check a policy; reports every error, not just the first.
-augur validate --policy examples/policy.yaml
+# 2. Check the tarball against the published checksums (--ignore-missing
+#    checks only the files you downloaded).
+sha256sum -c SHA256SUMS --ignore-missing
+
+# 3. Verify the build provenance (needs the GitHub CLI; on Debian/Ubuntu:
+#    apt-get install gh — if your release of the distro does not package it,
+#    install it from https://cli.github.com or skip this step and rely on the
+#    checksum).
+gh attestation verify augur_v0.1.0_linux_amd64.tar.gz --repo Hedronite/augur
+
+# 4. Extract and run.
+tar xzf augur_v0.1.0_linux_amd64.tar.gz
+cd augur_v0.1.0_linux_amd64
+./augur version
+
+# 5. Classify the example alert set and check the example policy.
+./augur evaluate --alerts examples/alerts.json --policy examples/policy.yaml --now 2026-01-15T12:00:00Z
+./augur validate --policy examples/policy.yaml
 ```
 
-`--now RFC3339` makes a run deterministic; without it, `evaluate` uses the wall clock and the verdict records which (`time_source`). Human-readable output is the default; `--json` prints the document alone on stdout; `--quiet` prints nothing and only sets the exit code. Errors go to stderr, name the file and field, show a short excerpt, and say how to fix it.
-
-The run above prints:
+The evaluate run above is YELLOW and exits 1: two raising warnings (a disk warning and a `NodeExporterDown` inside its hold, reported by both replicas), one held alert exempted by its kind, one suppressed alert held by an announced window, and the heartbeat.
 
 ```
-OVERALL: RED
+OVERALL: YELLOW
 reasons: none
 watchdog: seen, last 2026-01-15T11:58:00Z
-sources: file ok (2 alerts, last ok 2026-01-15T12:00:00Z)
+sources: file ok (6 alerts, last ok 2026-01-15T12:00:00Z)
 alerts:
-  RED    NodeExporterDown  host-a  active  since 2026-01-15T11:45:00Z  rule node-exporter-down  reasons node_exporter_down_single_view,rule_matched
-  GREEN  Watchdog          host-a  active  since 2025-12-01T00:00:00Z  -                        reasons heartbeat
+  YELLOW  DiskSpaceWarning  host-a    active      since 2026-01-15T11:50:00Z  rule disk-warn           reasons rule_matched
+  YELLOW  NodeExporterDown  host-a    active      since 2026-01-15T11:55:00Z  rule node-exporter-down  reasons node_exporter_within_hold,rule_matched
+  YELLOW  HTTPProbeFailing  host-b    active      since 2026-01-15T10:00:00Z  -                        reasons held_expected_dark,unmatched_default
+  YELLOW  NodeExporterDown  host-e    suppressed  since 2026-01-15T09:00:00Z  rule node-exporter-down  reasons held_announced_dark,inhibited,rule_matched
+  GREEN   Watchdog          unmapped  active      since 2025-12-01T00:00:00Z  -                        reasons heartbeat
 ```
 
-Note on views: `examples/policy.yaml` declares two replicas (`r1`, `r2`) to show the two-view rules. A single-view deployment — today's — omits `replicas` entirely and runs in single-view mode.
+`--now RFC3339` makes a run deterministic; without it, `evaluate` uses the
+wall clock and the verdict records which (`time_source`). Human-readable
+output is the default; `--json` prints the document alone on stdout;
+`--quiet` prints nothing and only sets the exit code. Errors go to stderr,
+name the file and field, show a short excerpt, and say how to fix it.
+
+How to rebuild a release yourself and verify it independently is in
+[`docs/release.md`](docs/release.md); installing it on a host with systemd is
+in [`docs/install.md`](docs/install.md).
+
+### Build from source
+
+A Go toolchain at the patch version named in the release notes (1.27.4 for
+v0.1.0; a different patch produces a different binary) is all `make build`
+needs:
+
+```sh
+make build          # or: go build -o augur ./cmd/augur
+./augur version
+```
+
+The release pipeline itself is documented in [`docs/release.md`](docs/release.md).
+
+Note on views: `examples/policy.yaml` declares two replicas (`r1`, `r2`) to
+show the two-view rules. A single-view deployment — today's — omits
+`replicas` entirely and runs in single-view mode.
 
 ## Serving
 
@@ -112,6 +155,15 @@ Augur has no network listener: `serve` only *reads* the Alertmanager API on a li
 ## Contributing
 
 Contributions follow the DCO; see [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, the commit rules, and the error-message house style.
+
+## Stability
+
+v0 promises nothing beyond the versioned documents. `augur.verdict/v0`,
+`augur.policy/v0` and `augur.vigil-block/v0` change only **additively** within
+v0: a field may be added, and is never removed, renamed, re-typed or given a
+new meaning. The exit codes and the reason codes are frozen for v0. Anything
+else — the CLI surface, defaults, this documentation — can change in any
+release.
 
 ## License
 

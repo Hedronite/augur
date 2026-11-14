@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Augur is pre-release: no versions are published yet. Security fixes apply to the latest commit on `main` only.
+The latest `v0.x` release is the only supported version: fixes land on `main` and ship in the next `v0.x` release. Older releases are not patched; upgrade via the steps in [`docs/install.md`](docs/install.md).
 
 ## Reporting a vulnerability
 
