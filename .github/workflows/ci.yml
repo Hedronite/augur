@@ -147,6 +147,7 @@ jobs:
           - { target: FuzzPolicyParse, pkg: ./internal/policy }
           - { target: FuzzPolicySchema, pkg: ./internal/policy }
           - { target: FuzzEvaluate, pkg: ./internal/engine }
+          - { target: FuzzVigilMap, pkg: ./internal/vigilmap }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
