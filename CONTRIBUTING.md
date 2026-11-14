@@ -64,6 +64,10 @@ To check a private denylist, set `AUGUR_SCRUB_EXTRA` to newline-separated extend
 - The properties that matter: determinism (byte-identical output), insensitivity to alert order, Watchdog and held alerts never raise `overall`, exempt alerts never RED, and no unvalidated input string ever appears in the output.
 - Schema conformance: golden outputs and the example policy validate against the hand-written schemas.
 
+## Vendored Vigil contract
+
+The block schema and the mapping goldens under `testdata/vigil/` are vendored into Vigil byte for byte at a pinned commit. When Vigil's side of the contract changes, refresh the vendored files (`testdata/vigil/vendor/`, whose `SOURCE` file names the pinned commit), update the goldens together with [`docs/vigil.md`](docs/vigil.md), and land the refresh as its own commit so the pin is reviewable.
+
 ## License
 
 Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT), at your option. Unless you explicitly state otherwise, any contribution you intentionally submit for inclusion in this work, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
