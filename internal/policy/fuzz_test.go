@@ -83,6 +83,18 @@ func seedPolicyCorpus(f *testing.F) {
 	if b, err := os.ReadFile("../../examples/policy.yaml"); err == nil {
 		f.Add(b)
 	}
+	// The schema's date-time pattern rejects this expires_at; the parser must
+	// reject it too. Kept as a seed after the pattern landed.
+	f.Add([]byte(`schema: augur.policy/v0
+default: YELLOW
+watchdog: {alertname: Watchdog}
+rules: []
+holds:
+  - id: maint
+    match: {host: host-a}
+    kind: announced_dark
+    expires_at: 2025-12-01T+0:00:00Z
+`))
 }
 
 // FuzzPolicyParse checks the parser never panics, that a successful parse

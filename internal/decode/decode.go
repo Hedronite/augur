@@ -62,14 +62,14 @@ const (
 	MaxLabelsPerAlert = 1_000
 )
 
-// timestampPattern is RFC3339 as the input schema's date-time format means it:
-// an upper or lower case T and Z (RFC3339 permits both), an optional fraction
-// with a dot, and an offset whose hour cannot exceed 23. The pattern is narrow
-// on purpose so that the decoder accepts exactly what the schema accepts; a
-// comma fraction and a +24:00 offset are rejected here because the schema
-// rejects them, even though time.Parse would take both.
+// timestampPattern is the schema's date-time pattern, narrowed where the
+// format keyword in am-alerts.v2.json is stricter: an offset hour above 23 and
+// an offset minute above 59 fail the format there, so they fail here too, even
+// though time.Parse would accept an offset of +24:00. Upper case T and Z only,
+// because the pattern says so. The decoder therefore accepts exactly what the
+// schema accepts, which is what the differential fuzz asserts.
 var timestampPattern = regexp.MustCompile(
-	`^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-](?:[01]\d|2[0-3]):[0-5]\d)$`)
+	`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$`)
 
 // grafanaMarkerKeys are alert fields only Grafana's contact-point payload
 // carries. Their presence identifies the document even when it also looks like
@@ -376,7 +376,7 @@ func parseTimestamp(s string) (time.Time, bool) {
 	if !timestampPattern.MatchString(s) {
 		return time.Time{}, false
 	}
-	t, err := time.Parse(time.RFC3339Nano, strings.ToUpper(s))
+	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		return time.Time{}, false
 	}

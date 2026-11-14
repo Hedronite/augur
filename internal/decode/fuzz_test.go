@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
@@ -76,6 +75,10 @@ func seedFixtures(f *testing.F) {
 		}
 		f.Add(b)
 	}
+	// The schema's date-time pattern rejects this; the decoder must too, or the
+	// differential fails. Kept as a seed after the pattern landed.
+	f.Add([]byte(`[{"labels":{"alertname":"Watchdog","host":"host-a"},` +
+		`"startsAt":"2025-12-01T+0:00:00Z","status":{"state":"active"}}]`))
 	f.Add([]byte(`{"version":"4","groupKey":"{}","status":"firing","alerts":[]}`))
 	f.Add([]byte(`{"receiver":"x","status":"firing","alerts":[{"status":"firing","valueString":"v"}]}`))
 }
@@ -165,9 +168,6 @@ func FuzzDecodeAMSchema(f *testing.F) {
 		if schemaOK && exceedCap(derr) {
 			return
 		}
-		if schemaOK && looseTimestamp(derr) {
-			return
-		}
 		t.Fatalf("schema accepts=%v, decoder accepts=%v: input %q, err %v", schemaOK, decOK, data, derr)
 	})
 }
@@ -180,23 +180,6 @@ func exceedCap(err error) bool {
 		return false
 	}
 	return em.Detail == "too many alerts" || em.Detail == "alerts[0].labels: too many labels"
-}
-
-// looseTimestamp reports the second sanctioned divergence.
-//
-// The schema's date-time is looser than RFC3339: a validator with format
-// assertion on accepts "2025-12-01T+0:00:00Z", which no RFC3339 parser can
-// read. The decoder stays strict, because rejecting a malformed timestamp is
-// the fail-closed direction and the schema cannot express the difference
-// without a pattern. Rejecting input the schema accepts is therefore allowed
-// only for a timestamp, and the one-way guarantee (whatever the decoder
-// accepts, the schema accepts) is unaffected.
-func looseTimestamp(err error) bool {
-	var em *ErrMalformed
-	if !errors.As(err, &em) {
-		return false
-	}
-	return strings.HasSuffix(em.Detail, ": not an RFC3339 time")
 }
 
 // TestDifferentialFixtures runs the differential over every fixture input, so
