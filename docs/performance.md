@@ -97,7 +97,7 @@ budget — a 7x margin before the write and loop that the real-binary poll run
 (above, ~72 ms CPU) covers. All budgets pass; per the release rule no
 optimisation was done, and the three benchmark files are measurement only.
 
-## Live (lathe)
+## Live (production instance)
 
 *To be filled after the v0.1.0 install: live RSS and poll time measured on
 the running instance, appended by PM through the frontend seat. This section
