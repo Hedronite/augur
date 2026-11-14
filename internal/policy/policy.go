@@ -2,9 +2,12 @@
 package policy
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"regexp"
 	"strconv"
@@ -44,28 +47,140 @@ var (
 	yamlLinePattern = regexp.MustCompile(`line ([0-9]+)`)
 )
 
+// coreTags are the only node tags a policy may use. !!timestamp is included
+// because the YAML resolver assigns it implicitly to an unquoted RFC3339 value,
+// which the shipped policies rely on for expires_at, and its JSON form is a
+// string. Everything else, custom tags and explicit !!binary or !!set included,
+// is refused: a policy is data an operator reviews, so it may not smuggle a
+// value past review with a tag.
+var coreTags = map[string]bool{
+	"!!str": true, "!!int": true, "!!bool": true, "!!null": true,
+	"!!float": true, "!!map": true, "!!seq": true, "!!timestamp": true,
+	"tag:yaml.org,2002:str": true, "tag:yaml.org,2002:int": true,
+	"tag:yaml.org,2002:bool": true, "tag:yaml.org,2002:null": true,
+	"tag:yaml.org,2002:float": true, "tag:yaml.org,2002:map": true,
+	"tag:yaml.org,2002:seq": true, "tag:yaml.org,2002:timestamp": true,
+}
+
+// strictParse decodes exactly one YAML document and refuses the features a
+// policy may not use: a second document, anchors, aliases, merge keys,
+// duplicate keys, and any tag outside the core set. The differential harness
+// calls it too, so the schema-side check and Parse refuse the same documents;
+// JSON Schema cannot see YAML features, and both sides must agree.
+//
+// A nil node with a nil error means the input is empty.
+func strictParse(data []byte) (*yaml.Node, *model.FieldError) {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	var doc yaml.Node
+	if err := dec.Decode(&doc); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, nil
+		}
+		return nil, &model.FieldError{
+			Line:    yamlErrorLine(err),
+			Value:   excerpt(err.Error()),
+			Problem: "the policy is not valid YAML",
+			Fix:     "check the indentation and quoting near this line",
+		}
+	}
+	var extra yaml.Node
+	if err := dec.Decode(&extra); err == nil {
+		return nil, &model.FieldError{
+			Line:    extra.Line,
+			Problem: "a second YAML document follows the policy",
+			Fix:     "keep one document per file; remove the --- separator and everything after it",
+		}
+	}
+	root := &doc
+	if root.Kind == yaml.DocumentNode {
+		if len(root.Content) == 0 {
+			return nil, nil
+		}
+		root = root.Content[0]
+	}
+	if fe := checkYAMLFeatures(root, ""); fe != nil {
+		return nil, fe
+	}
+	return root, nil
+}
+
+// checkYAMLFeatures walks the tree and returns the first refused feature.
+func checkYAMLFeatures(n *yaml.Node, path string) *model.FieldError {
+	if n.Anchor != "" {
+		return &model.FieldError{Line: n.Line, Path: path, Value: excerpt(n.Value),
+			Problem: "anchors are not allowed in a policy",
+			Fix:     "write the value where it is used; an anchor hides it from review"}
+	}
+	if n.Kind == yaml.AliasNode {
+		return &model.FieldError{Line: n.Line, Path: path, Value: excerpt(n.Value),
+			Problem: "aliases are not allowed in a policy",
+			Fix:     "write the referenced value out in full"}
+	}
+	if n.Tag != "" && !coreTags[n.Tag] {
+		return &model.FieldError{Line: n.Line, Path: path, Value: excerpt(n.Value),
+			Problem: "the tag " + n.Tag + " is not allowed in a policy",
+			Fix:     "drop the tag; a policy uses plain values only, and text is quoted"}
+	}
+	if n.Kind != yaml.MappingNode && n.Kind != yaml.SequenceNode {
+		return nil
+	}
+	if n.Kind == yaml.SequenceNode {
+		for i, item := range n.Content {
+			if fe := checkYAMLFeatures(item, fmt.Sprintf("%s[%d]", path, i)); fe != nil {
+				return fe
+			}
+		}
+		return nil
+	}
+	seen := make(map[string]bool, len(n.Content)/2)
+	for i := 0; i+1 < len(n.Content); i += 2 {
+		k := n.Content[i]
+		childPath := keyPath(path, k.Value)
+		if k.Tag == "!!merge" || k.Value == "<<" {
+			return &model.FieldError{Line: k.Line, Path: childPath, Value: excerpt(k.Value),
+				Problem: "merge keys are not allowed in a policy",
+				Fix:     "write the merged keys out in full"}
+		}
+		if seen[k.Value] {
+			return &model.FieldError{Line: k.Line, Path: childPath, Value: excerpt(k.Value),
+				Problem: "duplicate key",
+				Fix:     "keep a single " + k.Value + " entry"}
+		}
+		seen[k.Value] = true
+		if fe := checkYAMLFeatures(k, childPath); fe != nil {
+			return fe
+		}
+		if fe := checkYAMLFeatures(n.Content[i+1], childPath); fe != nil {
+			return fe
+		}
+	}
+	return nil
+}
+
+// keyPath joins a mapping key onto a field path.
+func keyPath(parent, key string) string {
+	if parent == "" {
+		return key
+	}
+	return parent + "." + key
+}
+
 // Parse reads strict YAML (unknown keys are errors) and returns the policy
 // with defaults applied and SHA256 set. It collects every problem rather than
 // stopping at the first; a non-empty slice means exit 4. The returned policy
 // is the zero value whenever the slice is non-empty, so a half-read policy can
 // never be used.
 func Parse(data []byte) (model.Policy, []model.FieldError) {
-	var doc yaml.Node
-	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return model.Policy{}, []model.FieldError{{
-			Line:    yamlErrorLine(err),
-			Problem: "the policy is not valid YAML",
-			Value:   excerpt(err.Error()),
-			Fix:     "check the indentation and quoting near this line",
-		}}
+	root, fe := strictParse(data)
+	if fe != nil {
+		return model.Policy{}, []model.FieldError{*fe}
 	}
-	if doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
+	if root == nil {
 		return model.Policy{}, []model.FieldError{{
 			Problem: "the policy is empty",
 			Fix:     "start with schema: " + schemaID,
 		}}
 	}
-	root := doc.Content[0]
 	if root.Kind != yaml.MappingNode {
 		return model.Policy{}, []model.FieldError{{
 			Line:    root.Line,
@@ -189,8 +304,7 @@ func (v *validator) schemaVersion(n *yaml.Node, path string) {
 // timestamp and a binary value reach JSON as strings and are accepted.
 func scalarIsString(n *yaml.Node) bool {
 	switch n.Tag {
-	case "!!str", "!!timestamp", "!!binary",
-		"tag:yaml.org,2002:str", "tag:yaml.org,2002:timestamp", "tag:yaml.org,2002:binary":
+	case "!!str", "!!timestamp", "tag:yaml.org,2002:str", "tag:yaml.org,2002:timestamp":
 		return true
 	}
 	return false
