@@ -1,0 +1,7 @@
+OVERALL: RED
+reasons: none
+watchdog: seen, last 2026-01-15T11:58:00Z
+sources: file ok (2 alerts, last ok 2026-01-15T12:00:00Z)
+alerts:
+  RED    NodeExporterDown  host-a  active  since 2026-01-15T11:45:00Z  rule node-exporter-down  reasons node_exporter_down_single_view,rule_matched
+  GREEN  Watchdog          host-a  active  since 2025-12-01T00:00:00Z  -                        reasons heartbeat

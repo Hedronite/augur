@@ -1,0 +1,5 @@
+OVERALL: YELLOW
+reasons: watchdog_missing
+watchdog: not seen
+sources: file ok (0 alerts, never ok)
+alerts: none

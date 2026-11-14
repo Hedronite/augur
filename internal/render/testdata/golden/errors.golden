@@ -1,0 +1,9 @@
+policy.yaml:3: default: GREEN
+  problem: default must not be GREEN
+  fix: use YELLOW or RED; GREEN is reserved for a verified heartbeat
+policy.yaml:9: node_exporter_red_hold: abcdefgh abcdefgh abcdefgh abcdefgh abcdefgh abcdefgh abcdefgh a…
+  problem: not a duration
+  fix: use a duration like 5m, 10m, or 90s
+policy.yaml: schema: (empty)
+  problem: missing
+  fix: add schema: augur.policy/v0
