@@ -90,9 +90,11 @@ alerts as current would fail open.
 | Verdict over 4 MiB | Internal error; last file left in place to age stale. | 6 |
 
 After a panic (exit 6) or any other non-zero exit, `Restart=on-failure` in the
-example unit restarts the process, bounded by systemd's start limits
-(`StartLimitIntervalSec` and `StartLimitBurst`); a restart resets the dead-man
-clock. A clean `SIGTERM` exit 0 is not restarted.
+example unit restarts the process. The unit sets `StartLimitIntervalSec=300`
+and `StartLimitBurst=5`: with `RestartSec=5s` that is five restarts in five
+minutes, then the unit stays failed and the verdict file ages into Vigil's
+`stale`. A restart resets the dead-man clock. A clean `SIGTERM` exit 0 is not
+restarted.
 
 When `serve` stops with no new write — crash, panic, or clean shutdown — the
 last file is left alone. Vigil ages a file that has not been updated for
