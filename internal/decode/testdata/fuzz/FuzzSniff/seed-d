@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\n  \"receiver\": \"augur\",\n  \"status\": \"firing\",\n  \"alerts\": [\n    {\n      \"status\": \"firing\",\n      \"labels\": {\n        \"alertname\": \"PeerPrometheusDown\",\n        \"host\": \"host-b\"\n      },\n      \"annotations\": {\n        \"summary\": \"s\"\n      },\n      \"startsAt\": \"2026-01-15T11:20:00Z\",\n      \"values\": {\n        \"B\": 0\n      },\n      \"valueString\": \"[ var='B' labels={} value=0 ]\"\n    }\n  ]\n}\n")

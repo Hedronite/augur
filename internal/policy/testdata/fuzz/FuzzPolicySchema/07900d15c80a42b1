@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("schema: augur.policy/v0\ndefault: YELLOW\n#000000000000000\nwatchdog:\n  alertname: 00000000\n  #000000000000000000000000000000000000000000000\nfirst_class_hosts:\n  #00000000000000000000000000000\n  - 000000\nrules:\n  - id: 00000000000000\n    match:\n     0000:\n    severity: YELLOW")

@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("schema: augur.policy/v0\ndefault: YELLOW\nhost_label: host\nwatchdog:\n  alertname: Watchdog\n  deadman_window: 5m\nnode_exporter_red_hold: 10m\nfirst_class_hosts:\n  - host-a\n  - host-b\n  - host-c\n  - host-d\nrules:\n  - id: peer-prom-down\n    match:\n      alertname:\n        regex: host-[\n    severity: YELLOW\n")
