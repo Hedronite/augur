@@ -30,7 +30,7 @@ func TestVerdictFitsAtMaxAlerts(t *testing.T) {
 	}
 	at := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
 	v := model.Verdict{
-		Schema: model.VerdictSchema, GeneratedAt: at, TimeSource: model.TimeWall, Overall: model.Red,
+		APIVersion: model.VerdictAPIVersion, GeneratedAt: at, TimeSource: model.TimeWall, Overall: model.Red,
 		PolicySHA256: strings.Repeat("0", 64), Reasons: model.AllReasons(),
 		Watchdog: model.WatchdogState{Seen: true, LastSeen: &at},
 		Sources:  []model.Source{{ID: SourceID, State: model.SourceOK, LastOK: &at, AlertCount: MaxAlerts}},

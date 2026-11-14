@@ -9,7 +9,7 @@ import (
 )
 
 // canonical is the wire form of a verdict. It mirrors the schema key order
-// and holds times as pre-formatted strings, so encoding/json cannot drift
+// (apiVersion first, per the A3a rename) and holds times as pre-formatted strings, so encoding/json cannot drift
 // from the contract: no nanosecond formatting, no time-zone variance, and
 // null only where the schema allows it.
 //
@@ -18,7 +18,7 @@ import (
 // order. The A0 conformance test compares against the expected.json fixtures
 // byte for byte.
 type canonical struct {
-	Schema       string            `json:"schema"`
+	APIVersion   string            `json:"apiVersion"`
 	GeneratedAt  string            `json:"generated_at"`
 	TimeSource   string            `json:"time_source"`
 	Overall      string            `json:"overall"`
@@ -115,7 +115,7 @@ func newCanonical(v model.Verdict) canonical {
 	}
 
 	return canonical{
-		Schema:       model.VerdictSchema,
+		APIVersion:   model.VerdictAPIVersion,
 		GeneratedAt:  rfc3339(v.GeneratedAt),
 		TimeSource:   v.TimeSource,
 		Overall:      string(v.Overall),

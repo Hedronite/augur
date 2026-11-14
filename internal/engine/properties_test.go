@@ -174,8 +174,8 @@ func checkBounds(t *testing.T, seed int64, v model.Verdict) {
 		}
 	}
 	reasons(v.Reasons, "rollup")
-	if v.Schema != model.VerdictSchema || v.TimeSource != "" {
-		t.Fatalf("seed %d: schema %q time source %q", seed, v.Schema, v.TimeSource)
+	if v.APIVersion != model.VerdictAPIVersion || v.TimeSource != "" {
+		t.Fatalf("seed %d: apiVersion %q time source %q", seed, v.APIVersion, v.TimeSource)
 	}
 	if v.Overall.Rank() > model.Red.Rank() {
 		t.Fatalf("seed %d: overall %q", seed, v.Overall)

@@ -278,7 +278,7 @@ type FieldError struct {
 // Verdict is the verdict document. render.JSON owns the canonical byte form;
 // the engine fills the struct with every slice already sorted and never nil.
 type Verdict struct {
-	Schema       string
+	APIVersion   string
 	GeneratedAt  time.Time
 	TimeSource   string // "flag" or "wall"; set by the caller, the engine never reads a clock
 	Overall      Severity
@@ -289,8 +289,8 @@ type Verdict struct {
 	Alerts       []VerdictAlert
 }
 
-// VerdictSchema is the value of Verdict.Schema.
-const VerdictSchema = "augur.verdict/v0"
+// VerdictAPIVersion is the value of Verdict.APIVersion.
+const VerdictAPIVersion = "augur.verdict/v0"
 
 // Time sources for Verdict.TimeSource.
 const (

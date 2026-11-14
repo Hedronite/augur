@@ -6,7 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema",
+    "apiVersion",
     "generated_at",
     "time_source",
     "overall",
@@ -17,8 +17,9 @@
     "alerts"
   ],
   "properties": {
-    "schema": {
-      "const": "augur.verdict/v0"
+    "apiVersion": {
+      "const": "augur.verdict/v0",
+      "description": "Document identity and major version. Vigil reads this field for every authority and refuses an unknown major, so the value carries both the document name and its major."
     },
     "generated_at": {
       "type": "string",

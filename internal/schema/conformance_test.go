@@ -318,7 +318,7 @@ func TestVerdictIsStrict(t *testing.T) {
 		"unknown top-level field": func(m map[string]any) { m["surprise"] = 1 },
 		"unknown reason code":     func(m map[string]any) { m["reasons"] = []any{"made_up_reason"} },
 		"bad overall":             func(m map[string]any) { m["overall"] = "ORANGE" },
-		"wrong schema id":         func(m map[string]any) { m["schema"] = "augur.verdict/v9" },
+		"wrong apiVersion":        func(m map[string]any) { m["apiVersion"] = "augur.verdict/v9" },
 	}
 	for name, mutate := range mutations {
 		t.Run(name, func(t *testing.T) {
