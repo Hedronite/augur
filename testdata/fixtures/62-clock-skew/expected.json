@@ -29,7 +29,7 @@
       "replicas": [],
       "rule_id": "node-exporter-down",
       "reasons": [
-        "clock_skew",
+        "alert_clock_skew",
         "node_exporter_within_hold",
         "rule_matched"
       ]

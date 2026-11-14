@@ -66,12 +66,12 @@ func TestUnreachableSource(t *testing.T) {
 	tr := deadman.New(window, t0)
 	// A heartbeat flag is ignored when the source is not ok.
 	got := tr.Observe(t0.Add(time.Minute), true, false)
-	want := deadman.State{Severity: model.Yellow, Reasons: rs(model.ReasonSourceUnreachable, model.ReasonWatchdogMissing)}
+	want := deadman.State{Severity: model.Yellow, Reasons: rs(model.ReasonAlertmanagerUnreachable, model.ReasonWatchdogMissing)}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 	got = tr.Observe(t0.Add(window), false, false)
-	want = deadman.State{Severity: model.Red, Reasons: rs(model.ReasonObservabilityBlind, model.ReasonSourceUnreachable)}
+	want = deadman.State{Severity: model.Red, Reasons: rs(model.ReasonAlertmanagerUnreachable, model.ReasonObservabilityBlind)}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
@@ -84,7 +84,7 @@ func TestBackwardsTimeNeverMovesStateBack(t *testing.T) {
 	}
 	// An earlier now must not read as less elapsed time.
 	got := tr.Observe(t0.Add(time.Minute), false, true)
-	want := deadman.State{Severity: model.Red, Reasons: rs(model.ReasonClockSkew, model.ReasonObservabilityBlind)}
+	want := deadman.State{Severity: model.Red, Reasons: rs(model.ReasonEvaluationClockBackwards, model.ReasonObservabilityBlind)}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
@@ -94,7 +94,7 @@ func TestBackwardsHeartbeatDoesNotRewindClock(t *testing.T) {
 	tr := deadman.New(window, t0)
 	tr.Observe(t0.Add(3*time.Minute), true, true)
 	got := tr.Observe(t0.Add(time.Minute), true, true)
-	if got.Severity != model.Green || !reflect.DeepEqual(got.Reasons, rs(model.ReasonClockSkew)) {
+	if got.Severity != model.Green || !reflect.DeepEqual(got.Reasons, rs(model.ReasonEvaluationClockBackwards)) {
 		t.Fatalf("got %+v", got)
 	}
 	// The clock is still 3m (the later heartbeat), so 3m+window-1ns is YELLOW.

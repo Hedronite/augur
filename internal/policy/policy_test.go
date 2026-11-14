@@ -436,3 +436,30 @@ func TestNonStringScalars(t *testing.T) {
 		})
 	}
 }
+
+// TestSlugRejectsLeadingDash: a host or replica slug may not start with a
+// hyphen, matching Vigil's slug pattern. A host label that starts with one is
+// reported as `unmapped` by the engine; in a policy it is a field error.
+func TestSlugRejectsLeadingDash(t *testing.T) {
+	head := "schema: augur.policy/v0\ndefault: YELLOW\nwatchdog: {alertname: Watchdog}\n"
+	reject := map[string]struct{ body, path string }{
+		"leading dash in first_class_hosts": {
+			"first_class_hosts: [-host-a]\nrules: []\n", "first_class_hosts[0]",
+		},
+		"leading dash in replicas": {
+			"replicas: [-host-a]\nrules: []\n", "replicas[0]",
+		},
+	}
+	for name, tc := range reject {
+		t.Run(name, func(t *testing.T) {
+			_, errs := Parse([]byte(head + tc.body))
+			if len(errs) == 0 || !contains(paths(errs), tc.path) {
+				t.Fatalf("errors = %+v, want one at %s", errs, tc.path)
+			}
+		})
+	}
+	// The pattern forbids a leading hyphen only: a trailing one is still a slug.
+	t.Run("trailing dash is still a slug", func(t *testing.T) {
+		parseOK(t, head+"replicas: [host-, r1]\nrules: []\n")
+	})
+}

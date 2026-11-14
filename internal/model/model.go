@@ -49,30 +49,31 @@ type Reason string
 
 // Top-level (rollup) reasons: heartbeat and source state.
 const (
-	ReasonWatchdogOnly       Reason = "watchdog_only"
-	ReasonWatchdogMissing    Reason = "watchdog_missing"
-	ReasonObservabilityBlind Reason = "observability_blind"
-	ReasonSourceUnreachable  Reason = "source_unreachable"
-	ReasonSourceStale        Reason = "source_stale"
+	ReasonWatchdogOnly            Reason = "watchdog_only"
+	ReasonWatchdogMissing         Reason = "watchdog_missing"
+	ReasonObservabilityBlind      Reason = "observability_blind"
+	ReasonAlertmanagerUnreachable Reason = "alertmanager_unreachable"
+	ReasonAlertmanagerStale       Reason = "alertmanager_stale"
 )
 
 // Per-alert reasons.
 const (
-	ReasonHeartbeat              Reason = "heartbeat"
-	ReasonRuleMatched            Reason = "rule_matched"
-	ReasonUnmatchedDefault       Reason = "unmatched_default"
-	ReasonHeldExpectedDark       Reason = "held_expected_dark"
-	ReasonHeldKnown              Reason = "held_known"
-	ReasonHeldAnnouncedDark      Reason = "held_announced_dark"
-	ReasonAnnouncedDarkExpired   Reason = "announced_dark_expired"
-	ReasonSilenced               Reason = "silenced"
-	ReasonInhibited              Reason = "inhibited"
-	ReasonNodeExporterWithinHold Reason = "node_exporter_within_hold"
-	ReasonNodeExporterSingleView Reason = "node_exporter_down_single_view"
-	ReasonNodeExporterBothViews  Reason = "node_exporter_down_both_views"
-	ReasonNodeExporterViewsSplit Reason = "node_exporter_views_split"
-	ReasonClockSkew              Reason = "clock_skew"
-	ReasonUnmappedHost           Reason = "unmapped_host"
+	ReasonHeartbeat                Reason = "heartbeat"
+	ReasonRuleMatched              Reason = "rule_matched"
+	ReasonUnmatchedDefault         Reason = "unmatched_default"
+	ReasonHeldExpectedDark         Reason = "held_expected_dark"
+	ReasonHeldKnown                Reason = "held_known"
+	ReasonHeldAnnouncedDark        Reason = "held_announced_dark"
+	ReasonAnnouncedDarkExpired     Reason = "announced_dark_expired"
+	ReasonSilenced                 Reason = "silenced"
+	ReasonInhibited                Reason = "inhibited"
+	ReasonNodeExporterWithinHold   Reason = "node_exporter_within_hold"
+	ReasonNodeExporterSingleView   Reason = "node_exporter_down_single_view"
+	ReasonNodeExporterBothViews    Reason = "node_exporter_down_both_views"
+	ReasonNodeExporterViewsSplit   Reason = "node_exporter_views_split"
+	ReasonAlertClockSkew           Reason = "alert_clock_skew"
+	ReasonEvaluationClockBackwards Reason = "evaluation_clock_backwards"
+	ReasonUnmappedHost             Reason = "unmapped_host"
 )
 
 // AllReasons returns every reason code, sorted. It is the Go side of the
@@ -80,13 +81,13 @@ const (
 func AllReasons() []Reason {
 	all := []Reason{
 		ReasonWatchdogOnly, ReasonWatchdogMissing, ReasonObservabilityBlind,
-		ReasonSourceUnreachable, ReasonSourceStale,
+		ReasonAlertmanagerUnreachable, ReasonAlertmanagerStale,
 		ReasonHeartbeat, ReasonRuleMatched, ReasonUnmatchedDefault,
 		ReasonHeldExpectedDark, ReasonHeldKnown, ReasonHeldAnnouncedDark,
 		ReasonAnnouncedDarkExpired, ReasonSilenced, ReasonInhibited,
 		ReasonNodeExporterWithinHold, ReasonNodeExporterSingleView,
 		ReasonNodeExporterBothViews, ReasonNodeExporterViewsSplit,
-		ReasonClockSkew, ReasonUnmappedHost,
+		ReasonAlertClockSkew, ReasonEvaluationClockBackwards, ReasonUnmappedHost,
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i] < all[j] })
 	return all
@@ -100,7 +101,7 @@ var (
 	// SeverityLabelPattern bounds source_severity; anything else becomes null.
 	SeverityLabelPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 	// SlugPattern bounds host and replica values; anything else is Unmapped.
-	SlugPattern = regexp.MustCompile(`^[a-z0-9-]{1,32}$`)
+	SlugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,31}$`)
 	// IDPattern bounds a policy rule or hold id.
 	IDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,63}$`)
 )
