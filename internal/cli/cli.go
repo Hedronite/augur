@@ -57,11 +57,14 @@ func newRoot() *cobra.Command {
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		// --version prints the same line as the version command.
+		Version: version,
 		// A bare "augur" must not exit 0: that would read as GREEN with no verdict.
 		RunE: func(*cobra.Command, []string) error {
 			return &exitError{code: ExitConfig, msg: "no command given; run 'augur --help' for usage"}
 		},
 	}
+	root.SetVersionTemplate("augur {{.Version}}\n")
 	root.AddCommand(newEvaluate(), newValidate(), newServe(), newVersion())
 	return root
 }

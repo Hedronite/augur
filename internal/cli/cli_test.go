@@ -38,6 +38,17 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+func TestVersionFlagMatchesCommand(t *testing.T) {
+	code, want, _ := run(t, "version")
+	if code != 0 {
+		t.Fatalf("version: code %d", code)
+	}
+	code, got, stderr := run(t, "--version")
+	if code != 0 || got != want || stderr != "" {
+		t.Fatalf("--version: code %d, stdout %q, stderr %q; want stdout %q", code, got, stderr, want)
+	}
+}
+
 func TestUsageErrorsExitConfig(t *testing.T) {
 	cases := [][]string{
 		{"nosuchcommand"},
