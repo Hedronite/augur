@@ -66,12 +66,6 @@ func newRoot() *cobra.Command {
 	return root
 }
 
-// notImplemented is the stub body for serve, which lands in A2. It exits 6 so
-// that an unfinished command can never read as a verdict.
-func notImplemented(name, phase string) error {
-	return &exitError{code: ExitInternal, msg: fmt.Sprintf("%s is not implemented yet (planned for %s)", name, phase)}
-}
-
 func newEvaluate() *cobra.Command {
 	var alerts, policy, now string
 	var asJSON, quiet bool
@@ -116,7 +110,9 @@ func newServe() *cobra.Command {
 		Use:   "serve --policy FILE --alertmanager URL --out FILE [--interval 30s]",
 		Short: "Poll Alertmanager and write each verdict to a file",
 		Args:  cobra.NoArgs,
-		RunE:  func(*cobra.Command, []string) error { return notImplemented("serve", "A2") },
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runServe(cmd, policy, alertmanager, out, interval)
+		},
 	}
 	cmd.Flags().StringVar(&policy, "policy", "", "policy file (augur.policy/v0, YAML)")
 	cmd.Flags().StringVar(&alertmanager, "alertmanager", "", "Alertmanager base URL; must be loopback")

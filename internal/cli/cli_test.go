@@ -38,30 +38,6 @@ func TestVersion(t *testing.T) {
 	}
 }
 
-// serve is still a stub (A2): it must exit 6, never a verdict.
-func TestStubsExitInternalNotGreen(t *testing.T) {
-	cases := []struct {
-		name string
-		args []string
-	}{
-		{"serve", []string{"serve", "--policy", "p.yaml", "--alertmanager", "http://127.0.0.1:9093", "--out", "v.json"}},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			code, out, errs := run(t, tc.args...)
-			if code != ExitInternal {
-				t.Errorf("exit = %d, want %d", code, ExitInternal)
-			}
-			if out != "" {
-				t.Errorf("stdout must stay empty when there is no verdict, got %q", out)
-			}
-			if !strings.Contains(errs, "not implemented") {
-				t.Errorf("stderr %q should say not implemented", errs)
-			}
-		})
-	}
-}
-
 func TestUsageErrorsExitConfig(t *testing.T) {
 	cases := [][]string{
 		{"nosuchcommand"},
