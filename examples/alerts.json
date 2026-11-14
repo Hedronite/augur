@@ -1,0 +1,84 @@
+[
+  {
+    "labels": {
+      "alertname": "Watchdog",
+      "replica": "r1"
+    },
+    "startsAt": "2025-12-01T00:00:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:58:00Z",
+    "fingerprint": "0000watchdog",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "NodeExporterDown",
+      "host": "host-a",
+      "replica": "r1"
+    },
+    "startsAt": "2026-01-15T11:55:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:55:00Z",
+    "fingerprint": "nodedown-host-a-r1",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "NodeExporterDown",
+      "host": "host-a",
+      "replica": "r2"
+    },
+    "startsAt": "2026-01-15T11:55:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:55:00Z",
+    "fingerprint": "nodedown-host-a-r2",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "DiskSpaceWarning",
+      "host": "host-a"
+    },
+    "startsAt": "2026-01-15T11:50:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T11:50:00Z",
+    "fingerprint": "diskwarn-host-a",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "HTTPProbeFailing",
+      "host": "host-b",
+      "port": "6443"
+    },
+    "startsAt": "2026-01-15T10:00:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T10:00:00Z",
+    "fingerprint": "kubeapi-dark-host-b",
+    "status": {
+      "state": "active"
+    }
+  },
+  {
+    "labels": {
+      "alertname": "NodeExporterDown",
+      "host": "host-e",
+      "replica": "r1"
+    },
+    "startsAt": "2026-01-15T09:00:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T09:00:00Z",
+    "fingerprint": "nodedown-host-e-r1",
+    "status": {
+      "state": "suppressed"
+    }
+  }
+]

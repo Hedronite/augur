@@ -49,6 +49,20 @@ func TestVersionFlagMatchesCommand(t *testing.T) {
 	}
 }
 
+// TestExamplesAreRunnable runs the example pair the README quick start uses,
+// with the same arguments, so the quick start cannot rot: the documented
+// verdict is YELLOW and exit 1, and the policy validates.
+func TestExamplesAreRunnable(t *testing.T) {
+	code, out, stderr := run(t, "evaluate", "--alerts", "../../examples/alerts.json", "--policy", "../../examples/policy.yaml", "--now", "2026-01-15T12:00:00Z")
+	if code != ExitYellow || !strings.HasPrefix(out, "OVERALL: YELLOW\n") || stderr != "" {
+		t.Fatalf("evaluate examples: code %d, stdout %q, stderr %q", code, out, stderr)
+	}
+	code, _, stderr = run(t, "validate", "--policy", "../../examples/policy.yaml")
+	if code != 0 || stderr != "" {
+		t.Fatalf("validate example policy: code %d, stderr %q", code, stderr)
+	}
+}
+
 func TestUsageErrorsExitConfig(t *testing.T) {
 	cases := [][]string{
 		{"nosuchcommand"},
