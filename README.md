@@ -2,7 +2,7 @@
 
 Augur reads alerts from Prometheus Alertmanager and classifies them as `GREEN`, `YELLOW` or `RED`, with a machine-readable reason for each verdict. It only advises: it never silences, acknowledges or routes alerts.
 
-Status: pre-release. Nothing to install yet.
+Status: pre-release. `evaluate` and `validate` are implemented; `serve` is planned (A2).
 
 Not related to [AugurProject/augur](https://github.com/AugurProject/augur).
 
@@ -39,30 +39,49 @@ Short version of the rollup:
 | Code | Meaning |
 | --- | --- |
 | `0` / `1` / `2` | GREEN / YELLOW / RED |
-| `3`+ | Bad or unsupported input, invalid policy, config error, internal error |
+| `3` | Bad or unsupported input (malformed JSON, an Alertmanager webhook message, a Grafana contact-point payload) |
+| `4` | Invalid policy |
+| `5` | Configuration or startup error |
+| `6` | Internal error; panics are recovered here, so a crash never reads as a verdict |
 
 Only "0–2 versus 3 and up" is the public contract, and exit `1` collides with generic failure in `set -e` scripts — see [`docs/exit-codes.md`](docs/exit-codes.md).
 
-## Quick start (planned, A1)
-
-These commands are the A0 contract shape; they are not implemented yet.
+## Quick start
 
 ```sh
 # Classify one saved snapshot of the Alertmanager v2 /api/v2/alerts response.
-augur evaluate --alerts alerts.json --policy policy.yaml
+# Fixture 50 is a single-view snapshot whose NodeExporterDown is past its
+# hold: the command prints the verdict below and exits 2 (RED).
+augur evaluate \
+  --alerts testdata/fixtures/50-node-exporter-past-hold-single-view/alerts.json \
+  --policy testdata/fixtures/50-node-exporter-past-hold-single-view/policy.yaml \
+  --now "$(cat testdata/fixtures/50-node-exporter-past-hold-single-view/now.txt)"
 
 # Check a policy; reports every error, not just the first.
-augur validate --policy policy.yaml
-
-# Poll Alertmanager on loopback and write the verdict atomically.
-augur serve --policy policy.yaml --alertmanager http://localhost:9093 --out verdict.json
+augur validate --policy examples/policy.yaml
 ```
 
-`evaluate` takes an optional `--now RFC3339` for deterministic runs. Human-readable output is the default; `--json` prints the document alone on stdout; `--quiet` prints nothing and only sets the exit code.
+`serve` — poll Alertmanager on loopback and write each verdict to a file atomically — is planned for A2.
+
+`--now RFC3339` makes a run deterministic; without it, `evaluate` uses the wall clock and the verdict records which (`time_source`). Human-readable output is the default; `--json` prints the document alone on stdout; `--quiet` prints nothing and only sets the exit code. Errors go to stderr, name the file and field, show a short excerpt, and say how to fix it.
+
+The run above prints:
+
+```
+OVERALL: RED
+reasons: none
+watchdog: seen, last 2026-01-15T11:58:00Z
+sources: file ok (2 alerts, last ok 2026-01-15T12:00:00Z)
+alerts:
+  RED    NodeExporterDown  host-a  active  since 2026-01-15T11:45:00Z  rule node-exporter-down  reasons node_exporter_down_single_view,rule_matched
+  GREEN  Watchdog          host-a  active  since 2025-12-01T00:00:00Z  -                        reasons heartbeat
+```
+
+Note on views: `examples/policy.yaml` declares two replicas (`r1`, `r2`) to show the two-view rules. A single-view deployment — today's — omits `replicas` entirely and runs in single-view mode.
 
 ## Security
 
-Augur has no network listener in its first release: `serve` reads the Alertmanager API on loopback only and refuses a non-loopback URL. It never changes alert state, never echoes raw label values, and never takes secrets on the command line. See [SECURITY.md](SECURITY.md) to report a vulnerability. The repository contains synthetic host slugs only (`host-a` … `host-e`); alert names follow the real rule set and are public by design. The real policy lives off-repository.
+Augur has no network listener: `serve` (planned, A2) reads the Alertmanager API on loopback only and refuses a non-loopback URL. It never changes alert state, never echoes raw label values, and never takes secrets on the command line. See [SECURITY.md](SECURITY.md) to report a vulnerability. The repository contains synthetic host slugs only (`host-a` … `host-e`); alert names follow the real rule set and are public by design. The real policy lives off-repository.
 
 ## Contributing
 
