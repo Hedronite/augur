@@ -503,6 +503,12 @@ func TestRefusedYAMLFeatures(t *testing.T) {
 			head + "---\nschema: augur.policy/v0\n",
 			"", "second YAML document",
 		},
+		// A trailing document that does not parse must not be ignored just
+		// because it never decoded successfully.
+		"trailing document that does not parse": {
+			head + "---\nbad: [\n",
+			"", "not valid YAML",
+		},
 	}
 	for name, tc := range refuse {
 		t.Run(name, func(t *testing.T) {
@@ -529,6 +535,9 @@ func TestRefusedYAMLFeatures(t *testing.T) {
 			"    kind: announced_dark\n    expires_at: 2026-12-01T00:00:00Z\n",
 		"quoted expires_at": head + "holds:\n  - id: m\n    match: {host: host-a}\n" +
 			"    kind: announced_dark\n    expires_at: \"2026-12-01T00:00:00Z\"\n",
+		// A stray separator, or one followed only by comments, is not a document.
+		"trailing separator":         head + "---\n",
+		"trailing separator comment": head + "---\n# nothing here\n",
 	}
 	for name, doc := range accept {
 		t.Run("accepts "+name, func(t *testing.T) { parseOK(t, doc) })
