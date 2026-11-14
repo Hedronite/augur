@@ -38,6 +38,8 @@ Short version of the rollup:
 
 Vigil reads the verdict file and joins it as an authority: one `verdicts[]` entry — `source: augur`, state, `severity` set to `overall`, the top-level rollup reasons passed through, `observed_at` set to `generated_at` — plus a bounded `augur{}` block: the heartbeat state, `policy_sha256`, exact severity counts over every alert, and the raising alerts (at most 50, most severe and oldest first) with an `omitted` count. The block never changes `overall`, and Augur's per-source status lives only in Vigil's `sources[]`. The full mapping, the caps and the version rule are in [`docs/vigil.md`](docs/vigil.md); the block contract is [`schema/vigil-block.v0.json`](schema/vigil-block.v0.json).
 
+Measured budgets and how to reproduce them are in [`docs/performance.md`](docs/performance.md).
+
 ## Exit codes
 
 | Code | Meaning |
