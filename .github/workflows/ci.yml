@@ -100,6 +100,10 @@ jobs:
           go-version: stable
       - run: scripts/scrub.sh --self-test
       - run: scripts/scrub.sh
+        env:
+          # Private denylist (newline-separated ERE), kept off-repo. Empty on
+          # fork PRs, where the script says so and runs the generic patterns.
+          AUGUR_SCRUB_EXTRA: ${{ secrets.AUGUR_SCRUB_EXTRA }}
       - run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
       - run: gitleaks git --no-banner --redact .
 
