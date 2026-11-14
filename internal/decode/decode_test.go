@@ -402,3 +402,66 @@ func TestUpdatedAtFallback(t *testing.T) {
 		t.Fatalf("UpdatedAt = %v, want %v", got, want)
 	}
 }
+
+// TestDeclaredPropertiesAreTyped: every property am-alerts.v2.json types is
+// checked, including the ones Augur never reads, so a document the schema
+// rejects is never reported as valid. The fingerprint case came from CI.
+func TestDeclaredPropertiesAreTyped(t *testing.T) {
+	// base is a valid alert; each row adds or replaces one declared field.
+	const base = `"labels":{"alertname":"Watchdog","host":"host-a"},"startsAt":"2026-01-15T11:00:00Z"`
+	withStatus := func(extra, status string) string {
+		return "{" + base + extra + `,"status":` + status + "}"
+	}
+	active := `{"state":"active"}`
+	reject := map[string]struct{ doc, field string }{
+		"fingerprint is an object":  {withStatus(`,"fingerprint":{}`, active), "fingerprint"},
+		"fingerprint is null":       {withStatus(`,"fingerprint":null`, active), "fingerprint"},
+		"generatorURL is a number":  {withStatus(`,"generatorURL":7`, active), "generatorURL"},
+		"annotations is an array":   {withStatus(`,"annotations":[]`, active), "annotations"},
+		"annotations is null":       {withStatus(`,"annotations":null`, active), "annotations"},
+		"annotation value a number": {withStatus(`,"annotations":{"summary":1}`, active), "annotations"},
+		"endsAt is an array":        {withStatus(`,"endsAt":[]`, active), "endsAt"},
+		"updatedAt is an object":    {withStatus(`,"updatedAt":{}`, active), "updatedAt"},
+		"silencedBy is null": {
+			withStatus("", `{"state":"suppressed","silencedBy":null}`), "status.silencedBy",
+		},
+		"inhibitedBy is a string": {
+			withStatus("", `{"state":"suppressed","inhibitedBy":"id"}`), "status.inhibitedBy",
+		},
+		"status is an array": {withStatus("", `[]`), "status"},
+		"labels is a string": {
+			`{"labels":"labels","startsAt":"2026-01-15T11:00:00Z","status":{"state":"active"}}`, "labels",
+		},
+		"label value is a number": {
+			`{"labels":{"alertname":"A","n":1},"startsAt":"2026-01-15T11:00:00Z","status":{"state":"active"}}`, "labels",
+		},
+	}
+	for name, tc := range reject {
+		t.Run(name, func(t *testing.T) {
+			var em *ErrMalformed
+			if _, err := DecodeAM([]byte("[" + tc.doc + "]")); !errors.As(err, &em) {
+				t.Fatalf("DecodeAM accepted %s (err = %v)", name, err)
+			} else if want := "alerts[0]." + tc.field + ":"; !strings.HasPrefix(em.Detail, want) {
+				t.Fatalf("Detail = %q, want the prefix %q", em.Detail, want)
+			}
+		})
+	}
+
+	accept := map[string]string{
+		"every declared field well typed": withStatus(
+			`,"fingerprint":"abc","generatorURL":"https://example.invalid/g",`+
+				`"annotations":{"summary":"s","description":"d"},"endsAt":"0001-01-01T00:00:00Z",`+
+				`"updatedAt":"2026-01-15T11:58:00Z"`,
+			`{"state":"suppressed","silencedBy":[],"inhibitedBy":[]}`),
+		// Undeclared fields stay ignored: the schema allows them, so the
+		// decoder must accept them whatever they hold.
+		"unknown fields are ignored": withStatus(`,"receivers":{},"mutedBy":{},"values":{"a":1}`, active),
+	}
+	for name, doc := range accept {
+		t.Run("accepts "+name, func(t *testing.T) {
+			if _, err := DecodeAM([]byte("[" + doc + "]")); err != nil {
+				t.Fatalf("DecodeAM rejected %s: %v", name, err)
+			}
+		})
+	}
+}
