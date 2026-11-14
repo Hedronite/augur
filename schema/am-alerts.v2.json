@@ -24,14 +24,16 @@
       "startsAt": {
         "type": "string",
         "format": "date-time",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
         "description": "RFC3339. Never the zero time on a real alert."
       },
       "endsAt": {
         "type": "string",
         "format": "date-time",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
         "description": "RFC3339. Alertmanager's unresolved sentinel 0001-01-01T00:00:00Z is valid here."
       },
-      "updatedAt": { "type": "string", "format": "date-time" },
+      "updatedAt": { "type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$" },
       "fingerprint": { "type": "string" },
       "generatorURL": { "type": "string" },
       "status": {

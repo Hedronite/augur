@@ -274,18 +274,15 @@ func TestStateMapping(t *testing.T) {
 	}
 }
 
-// TestTimestamps pins the acceptance set to the schema's date-time format.
-//
-// The shipped conformance compiler does not assert formats, so the schema alone
-// would accept "garbage" here; the decoder is deliberately stricter, which is
-// the fail-closed direction. These rows are the same ones a schema compiler
-// with format assertion agrees with.
+// TestTimestamps pins the acceptance set to the schema, which now carries a
+// date-time pattern beside the format keyword. The decoder implements the
+// stricter of the two: the pattern decides the shape, and the format decides
+// the offset range, so +24:00 and a comma fraction are out.
 func TestTimestamps(t *testing.T) {
 	accept := []string{
 		"2026-01-15T11:00:00Z",
 		"2026-01-15T11:00:00.000Z",
 		"2026-01-15T11:00:00.123456789Z",
-		"2026-01-15t11:00:00z",
 		"2026-01-15T11:00:00+00:00",
 		"2026-01-15T11:00:00-00:00",
 		"2026-01-15T23:59:59+23:59",
@@ -296,7 +293,9 @@ func TestTimestamps(t *testing.T) {
 		"garbage",
 		"2026-01-15T11:00:00",
 		"2026-01-15 11:00:00Z",
-		"2026-01-15T11:00:00,5Z", // comma fraction: the schema rejects it
+		"2026-01-15t11:00:00z",            // the pattern requires upper case T and Z
+		"2026-01-15T11:00:00.1234567890Z", // more than 9 fraction digits
+		"2026-01-15T11:00:00,5Z",          // comma fraction: the schema rejects it
 		"2026-01-15T11:00:00+24:00",
 		"2026-01-15T11:00:00+05:60",
 		"2026-02-30T00:00:00Z",

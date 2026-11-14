@@ -8,7 +8,6 @@ import (
 	"math"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"go.yaml.in/yaml/v3"
@@ -37,10 +36,11 @@ var (
 	// durationPattern is the grammar the policy schema accepts, on purpose
 	// narrower than time.ParseDuration: a whole number and one unit.
 	durationPattern = regexp.MustCompile(`^[0-9]+(s|m|h)$`)
-	// dateTimePattern mirrors decode's timestamp pattern, so that expires_at is
-	// accepted exactly when the schema's date-time format accepts it.
+	// dateTimePattern is the schema's date-time pattern, narrowed where the
+	// format keyword is stricter, so expires_at is accepted exactly when
+	// policy.v0.json accepts it.
 	dateTimePattern = regexp.MustCompile(
-		`^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-](?:[01]\d|2[0-3]):[0-5]\d)$`)
+		`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$`)
 	yamlLinePattern = regexp.MustCompile(`line ([0-9]+)`)
 )
 
@@ -639,7 +639,7 @@ func parseDateTime(s string) (time.Time, bool) {
 	if !dateTimePattern.MatchString(s) {
 		return time.Time{}, false
 	}
-	t, err := time.Parse(time.RFC3339Nano, strings.ToUpper(s))
+	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		return time.Time{}, false
 	}
