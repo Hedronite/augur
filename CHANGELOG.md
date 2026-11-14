@@ -8,7 +8,32 @@ and fails if the section is missing.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-14
+
+The first published release. The program is unchanged from the unpublished
+v0.1.0; only the release pipeline changed.
+
+### Fixed
+
+- Release: the release job could not attest the SBOMs. The attestation action
+  accepts a CycloneDX file only if it has a `serialNumber`, and the SBOMs were
+  written without one so that they would stay reproducible. Each SBOM now
+  carries a deterministic `serialNumber` (`urn:uuid:` plus a UUIDv5 over the
+  content), so the SBOMs and `SHA256SUMS` are still byte-identical on any host,
+  and the release build checks every SBOM against the action's acceptance rule
+  before anything is published.
+
+### Changed
+
+- Release: the SBOM attestations use `actions/attest` (the `attest-sbom` action
+  is deprecated), pinned by commit SHA.
+- CI: the reproducibility job builds all four targets, once from a tagged and
+  once from an untagged checkout, and compares the binaries, the tarballs and
+  the SBOMs.
+
 ## [0.1.0] - 2026-11-14
+
+Tagged, not published: the release job failed at the SBOM attestation. Use v0.1.1.
 
 First release: a deterministic classifier for Prometheus Alertmanager alerts.
 

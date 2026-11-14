@@ -4,7 +4,7 @@
 # machines and paths give the same bytes.
 #
 # Usage: scripts/release.sh VERSION OUTDIR [os/arch ...]
-#   VERSION  the tag as written, for example v0.1.0
+#   VERSION  the tag as written, for example v0.1.1
 #   OUTDIR   created if missing; receives augur_<VERSION>_<os>_<arch>.tar.gz,
 #            SHA256SUMS, and bin/<os>_<arch>/augur (the unpacked binaries)
 #   targets  default: linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
@@ -26,7 +26,7 @@ if [ $# -eq 0 ]; then
 fi
 
 if ! printf '%s' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
-  echo "release: VERSION '$version' is not a tag like v0.1.0" >&2
+  echo "release: VERSION '$version' is not a tag like v0.1.1" >&2
   exit 2
 fi
 

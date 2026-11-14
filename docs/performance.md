@@ -105,6 +105,6 @@ optimisation was done, and the three benchmark files are measurement only.
 
 ## Live (production instance)
 
-*To be filled after the v0.1.0 install: live RSS and poll time measured on
+*To be filled after the v0.1.1 install: live RSS and poll time measured on
 the running instance, appended by PM through the frontend seat. This section
 is intentionally empty until then.*

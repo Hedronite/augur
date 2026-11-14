@@ -16,10 +16,10 @@ gate: fmt-check tidy-check vet lint race soak conformance vuln scrub scrub-selft
 build:
 	$(GO) build -trimpath -buildvcs=false -ldflags '$(LDFLAGS)' -o augur ./cmd/augur
 
-# VERSION is a tag such as v0.1.0; the archives and the binary's version use it as written.
+# VERSION is a tag such as v0.1.1; the archives and the binary's version use it as written.
 VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || echo v0.0.0-dev)
 
-release: ## deterministic tarballs and SHA256SUMS in dist/ (needs only Go): make release VERSION=v0.1.0
+release: ## deterministic tarballs and SHA256SUMS in dist/ (needs only Go): make release VERSION=v0.1.1
 	scripts/release.sh $(VERSION) dist
 
 sbom: release ## CycloneDX SBOM per tarball, checked against its binary (needs cyclonedx-gomod, see docs/release.md)

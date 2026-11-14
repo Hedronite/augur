@@ -2,7 +2,7 @@
 # Print the CHANGELOG.md section for VERSION (the text under "## [X.Y.Z]", up
 # to the next heading or the link references). Fails if the section is missing
 # or empty, so a release cannot go out without notes.
-# Usage: scripts/release-notes.sh VERSION    (for example v0.1.0)
+# Usage: scripts/release-notes.sh VERSION    (for example v0.1.1)
 set -euo pipefail
 
 if [ $# -ne 1 ]; then
