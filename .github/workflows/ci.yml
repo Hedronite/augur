@@ -91,7 +91,7 @@ jobs:
 
   # The proof that the release is reproducible: the same commit, built twice in
   # two different checkout paths with separate Go caches and GOPATHs, must give
-  # the same binary, the same tarball, the same SBOM and so the same
+  # the same binaries, tarballs and SBOMs (all four targets) and so the same
   # SHA256SUMS, byte for byte. One checkout carries the version tag and the
   # other does not, which is the difference between the tag run and a dry run
   # of release.yml (the SBOM tool stamps the main version from VCS state). The
@@ -119,21 +119,25 @@ jobs:
         run: |
           src-one/scripts/install-cyclonedx.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
-      - name: Build linux/amd64 twice, one tagged and one not, and compare everything
+      - name: Build all four targets twice, one tagged and one not, and compare everything
         run: |
           test "$(go env GOVERSION)" = "go${GO_VERSION}"
           git -C elsewhere/src-two tag v0.0.0-repro   # the second checkout is a "tag run"
           build() { # dir name
             (cd "$1" && GOCACHE="$RUNNER_TEMP/gocache-$2" GOPATH="$RUNNER_TEMP/gopath-$2" \
-              scripts/release.sh v0.0.0-repro "$RUNNER_TEMP/out-$2" linux/amd64 &&
+              scripts/release.sh v0.0.0-repro "$RUNNER_TEMP/out-$2" &&
               GOCACHE="$RUNNER_TEMP/gocache-$2" GOPATH="$RUNNER_TEMP/gopath-$2" \
-              scripts/sbom.sh v0.0.0-repro "$RUNNER_TEMP/out-$2" linux/amd64)
+              scripts/sbom.sh v0.0.0-repro "$RUNNER_TEMP/out-$2")
             (cd "$RUNNER_TEMP/out-$2" && sha256sum bin/linux_amd64/augur && cat SHA256SUMS) > "$RUNNER_TEMP/sums-$2"
           }
           build src-one one
           build elsewhere/src-two two
           cat "$RUNNER_TEMP/sums-one" "$RUNNER_TEMP/sums-two"
           diff "$RUNNER_TEMP/sums-one" "$RUNNER_TEMP/sums-two"
+      - name: The attestation action's SBOM rule accepts every SBOM produced
+        run: |
+          python3 -I src-one/scripts/sbomtool.py selftest
+          python3 -I src-one/scripts/sbomtool.py accept "$RUNNER_TEMP"/out-one/augur_*.sbom.cdx.json "$RUNNER_TEMP"/out-two/augur_*.sbom.cdx.json
 
   scrub:
     runs-on: ubuntu-latest
