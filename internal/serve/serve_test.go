@@ -133,6 +133,7 @@ type harness struct {
 	am      *am
 	ticks   chan time.Time
 	written chan struct{}
+	polled  chan struct{} // a "poll" log line was emitted
 	done    chan error
 	cancel  context.CancelFunc
 	out     string
@@ -144,7 +145,7 @@ type harness struct {
 func startHarness(t *testing.T, mutate func(*harness)) *harness {
 	t.Helper()
 	clock := &fakeClock{t: t0}
-	h := &harness{t: t, clock: clock, am: newAM(t, clock), ticks: make(chan time.Time), written: make(chan struct{}, 64),
+	h := &harness{t: t, clock: clock, am: newAM(t, clock), ticks: make(chan time.Time), written: make(chan struct{}, 64), polled: make(chan struct{}, 64),
 		done: make(chan error, 1), out: filepath.Join(t.TempDir(), "verdict.json"), logs: &syncBuf{}}
 	pol, errs := policy.Parse([]byte(testPolicy))
 	if len(errs) > 0 {
@@ -159,7 +160,7 @@ func startHarness(t *testing.T, mutate func(*harness)) *harness {
 		Now:    clock.Now,
 		Ticks:  h.ticks,
 		Client: NewHTTPClient(),
-		Logger: slog.New(slog.NewJSONHandler(h.logs, nil)),
+		Logger: slog.New(pollSignal{Handler: slog.NewJSONHandler(h.logs, nil), ch: h.polled}),
 	}
 	h.deps.Write = func(path string, data []byte) error {
 		err := WriteAtomic(path, data)
@@ -185,15 +186,37 @@ func startHarness(t *testing.T, mutate func(*harness)) *harness {
 	return h
 }
 
+// waitWrite waits for one poll to finish: the verdict is written and the poll
+// line is logged. The write hook fires before the log line, so a test that
+// read the logs on the write alone would race with it.
 func (h *harness) waitWrite() {
 	h.t.Helper()
-	select {
-	case <-h.written:
-	case err := <-h.done:
-		h.t.Fatalf("Run returned early: %v", err)
-	case <-time.After(10 * time.Second):
-		h.t.Fatal("no verdict was written")
+	for _, ch := range []chan struct{}{h.written, h.polled} {
+		select {
+		case <-ch:
+		case err := <-h.done:
+			h.t.Fatalf("Run returned early: %v", err)
+		case <-time.After(10 * time.Second):
+			h.t.Fatal("a poll did not finish")
+		}
 	}
+}
+
+// pollSignal forwards every record and tells the test when a poll line is logged.
+type pollSignal struct {
+	slog.Handler
+	ch chan struct{}
+}
+
+func (p pollSignal) Handle(ctx context.Context, r slog.Record) error {
+	err := p.Handler.Handle(ctx, r)
+	if r.Message == "poll" {
+		select {
+		case p.ch <- struct{}{}:
+		default:
+		}
+	}
+	return err
 }
 
 // tick moves the clock to now+d and runs one poll to completion.
