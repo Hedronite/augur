@@ -24,8 +24,8 @@ holds no other network capability; it never changes alert state.
 2. Extract and install the binary:
 
    ```sh
-   tar xzf augur_v0.1.0_linux_amd64.tar.gz
-   install -m 0755 augur_v0.1.0_linux_amd64/augur /usr/local/bin/augur
+   tar xzf augur_v0.1.1_linux_amd64.tar.gz
+   install -m 0755 augur_v0.1.1_linux_amd64/augur /usr/local/bin/augur
    /usr/local/bin/augur version
    ```
 
@@ -43,7 +43,7 @@ holds no other network capability; it never changes alert state.
 4. Install the unit:
 
    ```sh
-   install -m 0644 augur_v0.1.0_linux_amd64/deploy/augur.service /etc/systemd/system/augur.service
+   install -m 0644 augur_v0.1.1_linux_amd64/deploy/augur.service /etc/systemd/system/augur.service
    systemctl daemon-reload
    systemctl enable --now augur
    ```
@@ -52,7 +52,7 @@ holds no other network capability; it never changes alert state.
 
    ```sh
    systemctl status augur            # active (running)
-   /usr/local/bin/augur version      # augur v0.1.0
+   /usr/local/bin/augur version      # augur v0.1.1
    cat /var/lib/augur/verdict.json   # a complete augur.verdict/v0 document
    ```
 
@@ -66,7 +66,7 @@ holds no other network capability; it never changes alert state.
 
    ```sh
    mv /usr/local/bin/augur /usr/local/bin/augur.previous
-   install -m 0755 augur_v0.1.0_linux_amd64/augur /usr/local/bin/augur
+   install -m 0755 augur_v0.1.1_linux_amd64/augur /usr/local/bin/augur
    systemctl restart augur
    ```
 

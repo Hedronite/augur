@@ -61,8 +61,8 @@ and the tarball.
 
 ```sh
 # 1. Download the release for your platform and the checksum file.
-curl -fsSLO https://github.com/Hedronite/augur/releases/download/v0.1.0/augur_v0.1.0_linux_amd64.tar.gz
-curl -fsSLO https://github.com/Hedronite/augur/releases/download/v0.1.0/SHA256SUMS
+curl -fsSLO https://github.com/Hedronite/augur/releases/download/v0.1.1/augur_v0.1.1_linux_amd64.tar.gz
+curl -fsSLO https://github.com/Hedronite/augur/releases/download/v0.1.1/SHA256SUMS
 
 # 2. Check the tarball against the published checksums (--ignore-missing
 #    checks only the files you downloaded).
@@ -72,11 +72,11 @@ sha256sum -c SHA256SUMS --ignore-missing
 #    apt-get install gh — if your release of the distro does not package it,
 #    install it from https://cli.github.com or skip this step and rely on the
 #    checksum).
-gh attestation verify augur_v0.1.0_linux_amd64.tar.gz --repo Hedronite/augur
+gh attestation verify augur_v0.1.1_linux_amd64.tar.gz --repo Hedronite/augur
 
 # 4. Extract and run.
-tar xzf augur_v0.1.0_linux_amd64.tar.gz
-cd augur_v0.1.0_linux_amd64
+tar xzf augur_v0.1.1_linux_amd64.tar.gz
+cd augur_v0.1.1_linux_amd64
 ./augur version
 
 # 5. Classify the example alert set and check the example policy.
@@ -112,7 +112,7 @@ in [`docs/install.md`](docs/install.md).
 ### Build from source
 
 A Go toolchain at the patch version named in the release notes (1.27.4 for
-v0.1.0; a different patch produces a different binary) is all `make build`
+v0.1.1; a different patch produces a different binary) is all `make build`
 needs:
 
 ```sh

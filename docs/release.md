@@ -8,16 +8,16 @@ SBOMs.
 
 ## What a release contains
 
-- `augur_v0.1.0_<os>_<arch>.tar.gz` for linux/amd64, linux/arm64,
+- `augur_v0.1.1_<os>_<arch>.tar.gz` for linux/amd64, linux/arm64,
   darwin/amd64 and darwin/arm64.
-- `augur_v0.1.0_<os>_<arch>.sbom.cdx.json` — a CycloneDX 1.6 SBOM per
+- `augur_v0.1.1_<os>_<arch>.sbom.cdx.json` — a CycloneDX 1.6 SBOM per
   tarball.
 - `SHA256SUMS` — sorted, two-space format, covering the four tarballs and the
   four SBOMs.
 
-The version string is the tag as written (`v0.1.0`); the binary prints
-`augur v0.1.0` (`augur version` or `--version`), and assets are named with
-it. Each tarball holds one top directory `augur_v0.1.0_<os>_<arch>/` with:
+The version string is the tag as written (`v0.1.1`); the binary prints
+`augur v0.1.1` (`augur version` or `--version`), and assets are named with
+it. Each tarball holds one top directory `augur_v0.1.1_<os>_<arch>/` with:
 `augur` (0755), `LICENSE-APACHE`, `LICENSE-MIT`, `README.md`,
 `deploy/augur.service`, `schema/` and `examples/`. Files are 0644, owner and
 group 0, and their mtime is the tagged commit's time.
@@ -29,17 +29,17 @@ release. Its build step is the same recipe a local build uses:
 
 ```
 CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags "-s -w -buildid= \
-  -X github.com/Hedronite/augur/internal/cli.version=v0.1.0"
+  -X github.com/Hedronite/augur/internal/cli.version=v0.1.1"
 ```
 
 The Go toolchain is pinned to an exact patch version — the one recorded in
-the release notes (1.27.4 for v0.1.0). **A different Go patch version changes
+the release notes (1.27.4 for v0.1.1). **A different Go patch version changes
 the binary**, so a faithful rebuild starts with the pinned toolchain.
 
 The same recipe is runnable locally:
 
 ```sh
-make release VERSION=v0.1.0     # output in dist/
+make release VERSION=v0.1.1     # output in dist/
 ```
 
 `make release` calls `scripts/release.sh`, the same script CI calls; the
@@ -59,7 +59,7 @@ vulnerability database to trust.
 ## The dry run
 
 Running `release.yml` through `workflow_dispatch` (input `version`, default
-`v0.1.0`) is a **dry run**: it builds, checksums and makes the SBOMs, then
+`v0.1.1`) is a **dry run**: it builds, checksums and makes the SBOMs, then
 uploads everything as a workflow artifact named `release-dry-run`. It creates
 no release and no attestation.
 
@@ -81,9 +81,9 @@ so the whole `SHA256SUMS`, are the same on any host.)
 
 ```sh
 git clone https://github.com/Hedronite/augur && cd augur
-git checkout v0.1.0
+git checkout v0.1.1
 # with Go 1.27.4 (or the patch named in the release notes) on PATH
-make release VERSION=v0.1.0                  # writes dist/
+make release VERSION=v0.1.1                  # writes dist/
 ```
 
 Then compare your tarballs with the published ones. Download the published
@@ -93,10 +93,10 @@ wrote:
 ```sh
 mkdir -p /tmp/augur-published
 curl -fsSL -o /tmp/augur-published/SHA256SUMS \
-  https://github.com/Hedronite/augur/releases/download/v0.1.0/SHA256SUMS
+  https://github.com/Hedronite/augur/releases/download/v0.1.1/SHA256SUMS
 
 # Linux: sha256sum; macOS: shasum -a 256
-(cd dist && sha256sum augur_v0.1.0_*.tar.gz) \
+(cd dist && sha256sum augur_v0.1.1_*.tar.gz) \
   | diff - <(grep '\.tar\.gz$' /tmp/augur-published/SHA256SUMS) && echo "tarballs match"
 ```
 
@@ -114,19 +114,19 @@ and checks its module hash) and is not part of the rebuild check.
 sha256sum -c SHA256SUMS --ignore-missing
 
 # build provenance, cryptographically bound to the repository
-gh attestation verify augur_v0.1.0_linux_amd64.tar.gz --repo Hedronite/augur
+gh attestation verify augur_v0.1.1_linux_amd64.tar.gz --repo Hedronite/augur
 
 # the SBOM, bound to its tarball
-gh attestation verify augur_v0.1.0_linux_amd64.tar.gz --repo Hedronite/augur \
+gh attestation verify augur_v0.1.1_linux_amd64.tar.gz --repo Hedronite/augur \
   --predicate-type https://cyclonedx.org/bom
 
 # the checksum file itself
 gh attestation verify SHA256SUMS --repo Hedronite/augur
 ```
 
-Download with `gh release download v0.1.0 --repo Hedronite/augur --pattern
+Download with `gh release download v0.1.1 --repo Hedronite/augur --pattern
 '…'` or plain `curl -fsSLO
-https://github.com/Hedronite/augur/releases/download/v0.1.0/<asset>`. The
+https://github.com/Hedronite/augur/releases/download/v0.1.1/<asset>`. The
 attestations are keyless: there is no key and no secret to keep, and `gh
 attestation verify` checks them against GitHub's transparency log.
 
