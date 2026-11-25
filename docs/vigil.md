@@ -98,7 +98,9 @@ array stays Simplex's.
 v0 promises nothing beyond the versioned documents. `augur.verdict/v0` and
 `augur.vigil-block/v0` change only **additively** within v0: a field may be
 added, and is never removed, renamed, re-typed or given a new meaning. The
-exit codes and the reason codes are frozen for v0. Anything else about this
+exit codes are frozen for v0. Reason codes are only ever added: a consumer
+that validates against a pinned copy of either schema refreshes it to accept a
+newer code. Anything else about this
 mapping can change in any release; the goldens under `testdata/vigil/` are
 updated together with this page when it does.
 

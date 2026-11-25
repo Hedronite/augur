@@ -134,7 +134,14 @@ func parseNow(flag string) (time.Time, string, error) {
 	return t.UTC(), model.TimeFlag, nil
 }
 
-func runEvaluate(cmd *cobra.Command, alertsPath, policyPath, nowFlag string, asJSON, quiet bool) error {
+// defaultValidFor is evaluate's --valid-for default in seconds: twice serve's
+// default interval.
+const defaultValidFor = 60
+
+func runEvaluate(cmd *cobra.Command, alertsPath, policyPath, nowFlag string, validFor int, asJSON, quiet bool) error {
+	if validFor < 1 {
+		return &exitError{code: ExitConfig, msg: "invalid --valid-for: expected a whole number of seconds, at least 1"}
+	}
 	now, source, err := parseNow(nowFlag)
 	if err != nil {
 		return err
@@ -154,6 +161,7 @@ func runEvaluate(cmd *cobra.Command, alertsPath, policyPath, nowFlag string, asJ
 
 	v := engine.Evaluate(snap, pol, now)
 	v.TimeSource = source
+	v.ValidFor = validFor
 
 	if !quiet {
 		var werr error

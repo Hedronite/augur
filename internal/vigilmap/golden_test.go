@@ -123,6 +123,7 @@ func base() model.Verdict {
 	last := at.Add(-2 * time.Minute)
 	return model.Verdict{
 		APIVersion: model.VerdictAPIVersion, GeneratedAt: at, TimeSource: model.TimeWall,
+		Observed: true, ValidFor: 60,
 		PolicySHA256: digest, Reasons: []model.Reason{},
 		Watchdog: model.WatchdogState{Seen: true, LastSeen: &last},
 		Sources:  []model.Source{{ID: "alertmanager", State: model.SourceOK, LastOK: &at, AlertCount: 1}},
@@ -143,6 +144,7 @@ func blindUnreachable() model.Verdict {
 	v := base()
 	last := at.Add(-6 * time.Minute)
 	v.Overall = model.Red
+	v.Observed = false
 	v.Reasons = []model.Reason{model.ReasonAlertmanagerUnreachable, model.ReasonObservabilityBlind, model.ReasonWatchdogMissing}
 	v.Watchdog = model.WatchdogState{}
 	v.Sources = []model.Source{{ID: "alertmanager", State: model.SourceUnreachable, LastOK: &last, AlertCount: 0}}

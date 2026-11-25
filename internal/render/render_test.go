@@ -24,6 +24,8 @@ func fixture50Verdict() model.Verdict {
 		APIVersion:   model.VerdictAPIVersion,
 		GeneratedAt:  generated,
 		TimeSource:   model.TimeFlag,
+		Observed:     true,
+		ValidFor:     60,
 		Overall:      model.Red,
 		PolicySHA256: "b7f1fe1bbea7192242367d18b20f37b7ccd2770678506c4845345277ff6ec048",
 		Reasons:      []model.Reason{},

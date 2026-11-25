@@ -31,7 +31,8 @@ response body at 16 MiB.
 ## Startup
 
 - The first verdict is written **straight away**, not after one interval. The
-  dead-man clock starts when the process starts.
+  dead-man clock starts when the process starts, unless the last verdict at
+  `--out` carries an earlier one over (below).
 - Startup refusals exit **5** with a house-style message and write nothing:
   a non-loopback URL, an unreadable policy, an unwritable output directory,
   or an interval out of bounds.
@@ -48,6 +49,11 @@ The verdict file is the interface Vigil reads. It holds one canonical
   `rename`, then `fsync` of the directory. A reader always sees either the
   previous complete file or the new complete file — never a partial one.
 - Mode 0644.
+- Every document says how far to trust it: `observed` (`false` when no alert
+  set was read and evaluated; such a verdict is never GREEN), `valid_for`
+  (whole seconds: twice `--interval`, rounded down; `evaluate` takes
+  `--valid-for`, default 60) and `declaration` (the policy's optional
+  `declaration: sha256:<64 hex>`, or null).
 - Under Vigil's 4 MiB read cap. A verdict that would not fit is an internal
   error (exit 6): `alerts[]` is never truncated to fit, because a partial
   verdict could hide a RED. The last good file is left in place and ages
@@ -62,6 +68,7 @@ alerts as current would fail open.
 | Source state | What happened | Verdict effect |
 | --- | --- | --- |
 | `ok` | Poll succeeded; the snapshot is decoded and classified normally. | Per the watch rules; Watchdog seen → GREEN-eligible. |
+| `stale`, over cap | The poll held more than 4,000 alerts. None are evaluated: `alerts: []`, `alert_count: 0`, `observed: false`, and `last_ok` stays at the last good poll. | `alerts_over_cap` + `watchdog_missing`; RED `observability_blind` once `deadman_window` has passed since the last good heartbeat. |
 | `unreachable` | Connect error, timeout, non-200, refused redirect, over-cap body, or decode error. Classified as an empty snapshot: `alerts: []`. | YELLOW `alertmanager_unreachable` + `watchdog_missing`; RED `observability_blind` once `deadman_window` has passed since the last good heartbeat. |
 | `stale` | Poll succeeded, but the Watchdog's `updatedAt` is older than `deadman_window`: Alertmanager is up while the alert source stopped refreshing. The Watchdog counts as **not seen**. | `alertmanager_stale` added; the tracker proceeds as for a missed heartbeat → YELLOW, then RED past the window. `alert_count` still counts every alert read, including the dropped Watchdog. |
 
@@ -73,10 +80,17 @@ alerts as current would fail open.
 - A Watchdog seen again recovers straight away.
 - A clock that appears to run backwards never moves the state back: it is
   treated as zero elapsed time and recorded as `evaluation_clock_backwards`.
-- There is no state file. A restart resets the dead-man clock: after a
-  restart, the process treats the startup instant as the last observation,
-  so a restart can briefly hold a verdict at YELLOW that would have been
-  RED. This is a documented limitation (SPEC §10).
+- There is no state file. The window survives a restart through the last
+  verdict at `--out`: while the heartbeat is not current, the verdict records
+  in `watchdog.deadman_since` the instant the window counts from; after a
+  healthy verdict it counts from that verdict's `generated_at`. A verdict
+  already `observability_blind` stays blind until a heartbeat is seen.
+- Time spent stopped counts. A start long after the last verdict is RED on its
+  first poll unless that poll sees the heartbeat.
+- A missing, unreadable or foreign file at `--out` (including one written by
+  `evaluate`) is not an error: the window starts at the startup instant. A
+  file that exists but cannot be used is logged as `unusable_verdict`.
+  Delete the file before starting to begin a fresh window.
 
 ## Lifecycle
 
@@ -93,8 +107,8 @@ After a panic (exit 6) or any other non-zero exit, `Restart=on-failure` in the
 example unit restarts the process. The unit sets `StartLimitIntervalSec=300`
 and `StartLimitBurst=5`: with `RestartSec=5s` that is five restarts in five
 minutes, then the unit stays failed and the verdict file ages into Vigil's
-`stale`. A restart resets the dead-man clock. A clean `SIGTERM` exit 0 is not
-restarted.
+`stale`. A restart carries the dead-man window over from the last verdict. A
+clean `SIGTERM` exit 0 is not restarted.
 
 When `serve` stops with no new write — crash, panic, or clean shutdown — the
 last file is left alone. Vigil ages a file that has not been updated for

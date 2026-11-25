@@ -20,6 +20,9 @@ import (
 type canonical struct {
 	APIVersion   string            `json:"apiVersion"`
 	GeneratedAt  string            `json:"generated_at"`
+	Observed     bool              `json:"observed"`
+	ValidFor     int               `json:"valid_for"`
+	Declaration  *string           `json:"declaration"`
 	TimeSource   string            `json:"time_source"`
 	Overall      string            `json:"overall"`
 	PolicySHA256 string            `json:"policy_sha256"`
@@ -34,6 +37,8 @@ type canonical struct {
 type canonicalWatchdog struct {
 	Seen     bool `json:"seen"`
 	LastSeen any  `json:"last_seen"`
+	// DeadmanSince is omitted, not null, when there is nothing to carry over.
+	DeadmanSince any `json:"deadman_since,omitempty"`
 }
 
 type canonicalSource struct {
@@ -117,13 +122,17 @@ func newCanonical(v model.Verdict) canonical {
 	return canonical{
 		APIVersion:   model.VerdictAPIVersion,
 		GeneratedAt:  rfc3339(v.GeneratedAt),
+		Observed:     v.Observed,
+		ValidFor:     v.ValidFor,
+		Declaration:  v.Declaration,
 		TimeSource:   v.TimeSource,
 		Overall:      string(v.Overall),
 		PolicySHA256: v.PolicySHA256,
 		Reasons:      strList(v.Reasons),
 		Watchdog: canonicalWatchdog{
-			Seen:     v.Watchdog.Seen,
-			LastSeen: nullableTime(v.Watchdog.LastSeen),
+			Seen:         v.Watchdog.Seen,
+			LastSeen:     nullableTime(v.Watchdog.LastSeen),
+			DeadmanSince: nullableTime(v.Watchdog.DeadmanSince),
 		},
 		Sources: sources,
 		Alerts:  alerts,

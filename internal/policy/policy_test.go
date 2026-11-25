@@ -543,3 +543,29 @@ func TestRefusedYAMLFeatures(t *testing.T) {
 		t.Run("accepts "+name, func(t *testing.T) { parseOK(t, doc) })
 	}
 }
+
+// declaration is optional: a digest is copied verbatim, null and absent mean
+// undeclared, and anything else is refused.
+func TestDeclaration(t *testing.T) {
+	const base = "schema: augur.policy/v0\ndefault: YELLOW\nwatchdog: {alertname: Watchdog}\nrules: []\n"
+	hex := strings.Repeat("0123456789abcdef", 4)
+	for _, line := range []string{"", "declaration: null\n", "declaration: ~\n", "declaration:\n"} {
+		if p := parseOK(t, base+line); p.Declaration != nil {
+			t.Errorf("%q: declaration %q, want nil", line, *p.Declaration)
+		}
+	}
+	for _, line := range []string{"declaration: sha256:" + hex + "\n", "declaration: \"sha256:" + hex + "\"\n"} {
+		if p := parseOK(t, base+line); p.Declaration == nil || *p.Declaration != "sha256:"+hex {
+			t.Errorf("%q: declaration %v", line, p.Declaration)
+		}
+	}
+	for _, value := range []string{
+		`""`, `"null"`, hex, "sha256:" + hex[1:], "sha256:" + hex + "0", "sha256:" + strings.ToUpper(hex),
+		"sha1:" + hex, "7", "true", "[]", "{}", `" sha256:` + hex + `"`, `"sha256:` + hex + `\n"`,
+	} {
+		_, errs := Parse([]byte(base + "declaration: " + value + "\n"))
+		if !contains(paths(errs), "declaration") {
+			t.Errorf("declaration %s: errors %v", value, paths(errs))
+		}
+	}
+}

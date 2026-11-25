@@ -18,11 +18,12 @@ const (
 	// MaxBody caps one response body, the same cap as `evaluate` input.
 	MaxBody = 16 << 20
 	// MaxAlerts caps the alerts one poll may carry. It is what keeps the
-	// verdict under MaxVerdictBytes: a poll over the cap is a failed poll
-	// (unreachable), which fails closed. TestVerdictFitsAtMaxAlerts shows that
-	// even with every bounded field at its maximum (about 860 bytes an alert,
-	// where a typical alert is about 314) the verdict fits. The decoder's own
-	// cap is higher because `evaluate` has no output cap.
+	// verdict under MaxVerdictBytes: a poll over the cap is a failed poll that
+	// evaluates no alerts and reports alerts_over_cap, which fails closed.
+	// TestVerdictFitsAtMaxAlerts shows that even with every bounded field at
+	// its maximum (about 860 bytes an alert, where a typical alert is about
+	// 314) the verdict fits. The decoder's own cap is higher because `evaluate`
+	// has no output cap.
 	MaxAlerts = 4000
 	// MaxVerdictBytes is the reader's cap on the verdict file (4 MiB).
 	MaxVerdictBytes = 4 << 20
@@ -126,6 +127,11 @@ func fetch(ctx context.Context, c Doer, target string, timeout time.Duration, us
 	}
 	snap, err := decode.DecodeAM(data)
 	if err != nil {
+		// The decoder's own, far higher, cap is the same condition.
+		var bad *decode.ErrMalformed
+		if errors.As(err, &bad) && bad.TooMany {
+			return model.Snapshot{}, &PollError{Kind: KindTooMany}
+		}
 		return model.Snapshot{}, &PollError{Kind: KindDecode}
 	}
 	if len(snap.Alerts) > MaxAlerts {

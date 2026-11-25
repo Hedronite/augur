@@ -15,6 +15,25 @@ import (
 const (
 	peerDown   = "PeerPrometheusDown"
 	peerAbsent = "PeerPrometheusAbsent"
+	// nodeExporterDown is the one alert whose escalation reports the
+	// node_exporter_* codes.
+	nodeExporterDown = "NodeExporterDown"
+)
+
+// escalationCodes names the four outcomes of the replicas rule.
+type escalationCodes struct {
+	withinHold, singleView, bothViews, viewsSplit model.Reason
+}
+
+var (
+	nodeExporterCodes = escalationCodes{
+		withinHold: model.ReasonNodeExporterWithinHold, singleView: model.ReasonNodeExporterSingleView,
+		bothViews: model.ReasonNodeExporterBothViews, viewsSplit: model.ReasonNodeExporterViewsSplit,
+	}
+	genericCodes = escalationCodes{
+		withinHold: model.ReasonEscalateWithinHold, singleView: model.ReasonEscalateSingleView,
+		bothViews: model.ReasonEscalateBothViews, viewsSplit: model.ReasonEscalateViewsSplit,
+	}
 )
 
 // Evaluate classifies snap against pol as of now. The returned Verdict has
@@ -40,6 +59,8 @@ func Evaluate(snap model.Snapshot, pol model.Policy, now time.Time) model.Verdic
 	v := model.Verdict{
 		APIVersion:   model.VerdictAPIVersion,
 		GeneratedAt:  now,
+		Observed:     !snap.OverCap && (snap.State == model.SourceOK || snap.State == model.SourceStale),
+		Declaration:  pol.Declaration,
 		Overall:      model.Green,
 		PolicySHA256: pol.SHA256,
 		Reasons:      []model.Reason{},
@@ -69,14 +90,16 @@ func Evaluate(snap model.Snapshot, pol model.Policy, now time.Time) model.Verdic
 	}
 	sortAlerts(v.Alerts)
 
-	srcOK := snap.State == model.SourceOK
+	srcOK := snap.State == model.SourceOK && !snap.OverCap
 	var rollup []model.Reason
 	if !v.Watchdog.Seen {
 		rollup = append(rollup, model.ReasonWatchdogMissing)
 	}
-	switch snap.State {
-	case model.SourceOK:
-	case model.SourceStale:
+	switch {
+	case snap.OverCap:
+		rollup = append(rollup, model.ReasonAlertsOverCap)
+	case snap.State == model.SourceOK:
+	case snap.State == model.SourceStale:
 		rollup = append(rollup, model.ReasonAlertmanagerStale)
 	default: // unreachable, and anything unknown fails closed
 		rollup = append(rollup, model.ReasonAlertmanagerUnreachable)
@@ -406,12 +429,16 @@ func (e *evaluator) escalationApplies(esc *model.Escalate, m member) bool {
 // It implements the replicas rule (SPEC section 5). Age at or past After is
 // "past the hold".
 func (e *evaluator) escalate(base model.Severity, esc *model.Escalate, age time.Duration, va model.VerdictAlert, lost map[string]bool) (model.Severity, []model.Reason) {
+	codes := genericCodes
+	if va.Name == nodeExporterDown {
+		codes = nodeExporterCodes
+	}
 	if age < esc.After {
-		return base, []model.Reason{model.ReasonNodeExporterWithinHold}
+		return base, []model.Reason{codes.withinHold}
 	}
 	declared := e.pol.Replicas
 	if len(declared) == 0 {
-		return model.Red, []model.Reason{model.ReasonNodeExporterSingleView}
+		return model.Red, []model.Reason{codes.singleView}
 	}
 
 	reporting := make(map[string]bool, len(va.Replicas))
@@ -429,14 +456,14 @@ func (e *evaluator) escalate(base model.Severity, esc *model.Escalate, age time.
 	switch {
 	case attributed == 0:
 		// The report cannot be attributed to any declared view. Fail closed.
-		return model.Red, []model.Reason{model.ReasonNodeExporterSingleView}
+		return model.Red, []model.Reason{codes.singleView}
 	case silentLive > 0:
-		return base, []model.Reason{model.ReasonNodeExporterViewsSplit}
+		return base, []model.Reason{codes.viewsSplit}
 	case attributed == len(declared):
-		return model.Red, []model.Reason{model.ReasonNodeExporterBothViews}
+		return model.Red, []model.Reason{codes.bothViews}
 	default:
 		// Every silent declared replica is lost.
-		return model.Red, []model.Reason{model.ReasonNodeExporterSingleView}
+		return model.Red, []model.Reason{codes.singleView}
 	}
 }
 

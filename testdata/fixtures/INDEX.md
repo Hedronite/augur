@@ -9,6 +9,7 @@ Every `expected.json` pins `policy_sha256` to the sha256 of that directory's `po
 The spec fixes the outcome; these are the details the spec leaves open, frozen here so A1 has one target.
 
 1. `evaluate` reports a single source: `{"id":"file","state":"ok","last_ok":<now>,"alert_count":<len(alerts.json)>}`.
+   Every verdict also carries `observed: true`, `valid_for: 60` (the `--valid-for` default) and `declaration: null` (no fixture policy declares one).
 2. Top-level `reasons[]` carries heartbeat and source conditions only (`watchdog_only`, `watchdog_missing`, `observability_blind`, `alertmanager_unreachable`, `alertmanager_stale`). When alerts alone drive the severity, it is empty; `alerts[].reasons[]` explains the rest.
 3. Any alert named by `watchdog.alertname` sets `watchdog.seen`, with `last_seen` equal to that alert's `updatedAt`. An empty array means not seen.
 4. The Watchdog appears in `alerts[]` with severity `GREEN`, `expected: true`, `rule_id: null` and reason `heartbeat` (plus `silenced` when suppressed). It never takes `unmatched_default`, and it never takes `unmapped_host` either, even though its host is the literal `unmapped` because it carries no host label (`80`); a non-heartbeat alert with an unreadable host still does (`61`).
