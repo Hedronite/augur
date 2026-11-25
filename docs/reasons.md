@@ -27,6 +27,7 @@ consumer existed. No Augur code equals one of Vigil's own codes.
 | `observability_blind` | RED | The Watchdog has not been seen, or a source has been unreachable, for longer than the policy's `deadman_window`. Produced by `serve` only. |
 | `alertmanager_unreachable` | none by itself | The Alertmanager source could not be reached at classification time. Combined with a missed heartbeat past `deadman_window` it contributes to `observability_blind`. |
 | `alertmanager_stale` | none by itself | The Alertmanager source was reached but is not producing current data: the Watchdog's `updatedAt` is older than `deadman_window`. |
+| `alerts_over_cap` | none by itself | `serve` only: one poll held more than 4,000 alerts, so none were evaluated. The source answered, so it is `stale` rather than `unreachable`; the verdict has `observed: false` and the dead-man window keeps running. |
 | `evaluation_clock_backwards` | state | `serve` only: the clock appeared to run backwards since the last observation. Elapsed time is treated as zero and the state never moves backwards. |
 
 ## Per-alert codes (`alerts[].reasons[]`)
@@ -46,10 +47,20 @@ consumer existed. No Augur code equals one of Vigil's own codes.
 | `node_exporter_down_single_view` | RED | A first-class host's `NodeExporterDown` is still active past its hold as seen by one view: single-replica mode, or a declared replica that does not report it because it is lost, with every reporting replica past the hold. A lost replica does not block RED. |
 | `node_exporter_down_both_views` | RED | The same alert confirmed: every declared replica reports it and the merged age is past the hold. |
 | `node_exporter_views_split` | YELLOW | A declared replica is live and does not report the alert while another replica does. A path problem on one side alone, with a healthy peer, stays YELLOW. |
+| `escalate_within_hold` | YELLOW | An escalating rule on any alert other than `NodeExporterDown`: every reporting replica reports it, and the merged age is within the rule's `after`. |
+| `escalate_single_view` | RED | The same alert past `after` as seen by one view: single-replica mode, a report no declared replica can be credited with, or every silent declared replica lost. |
+| `escalate_both_views` | RED | Past `after` and reported by every declared replica. |
+| `escalate_views_split` | YELLOW | A declared replica is live and does not report the alert while another replica does. |
 | `alert_clock_skew` | state | The alert's `starts_at` is in the future; hold age is clamped at 0. |
 | `unmapped_host` | state | The host label is missing or is not a valid slug (`^[a-z0-9][a-z0-9-]{0,31}$`); the alert's `host` field is the literal value `unmapped`. The heartbeat alert never carries this reason — the real Watchdog has no host label, so its host is `unmapped` by design. Raw label values are never echoed. |
 
 ## The replicas rule
+
+The rule applies to every escalating policy rule. An alert named
+`NodeExporterDown` reports it with the `node_exporter_*` codes and every other
+alert with the matching `escalate_*` code; the severities are the same. The
+text below uses `NodeExporterDown`, whose usual hold is
+`node_exporter_red_hold`.
 
 The optional policy key `replicas: [slug, …]` lists the views whose alerts reach
 Augur's source, read from the label named by `replica_label`. If `replicas` is
@@ -75,7 +86,8 @@ unset, there is one unlabeled view (single-replica mode).
   a hold code alongside a state code.
 - When a `NodeExporterDown` alert passes the hold and escalates to RED, the RED code
   (`node_exporter_down_single_view` or `node_exporter_down_both_views`) replaces
-  `node_exporter_within_hold` on that alert.
+  `node_exporter_within_hold` on that alert; `escalate_single_view` and
+  `escalate_both_views` replace `escalate_within_hold` the same way.
 - Codes on an exempt alert (`expected: true`) never raise `overall`; the top-level
   rollup reports heartbeat and source state, and alert-driven causes are detailed
   per alert. `overall` is the worst severity of any alert not exempted above.

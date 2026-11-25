@@ -264,6 +264,8 @@ func (v *validator) document(root *yaml.Node) {
 		switch name {
 		case "schema":
 			v.schemaVersion(val, name)
+		case "declaration":
+			v.declaration(val, name)
 		case "default":
 			if sev, ok := v.severity(val, name); ok {
 				v.p.Default = sev
@@ -320,6 +322,20 @@ func (v *validator) schemaVersion(n *yaml.Node, path string) {
 	if n.Value != schemaID {
 		v.add(n, path, "unsupported policy schema", "use "+schemaID)
 	}
+}
+
+// declaration accepts a sha256 digest, or null for undeclared.
+func (v *validator) declaration(n *yaml.Node, path string) {
+	if n.Kind == yaml.ScalarNode && n.ShortTag() == "!!null" {
+		return
+	}
+	if n.Kind != yaml.ScalarNode || !scalarIsString(n) || !model.DeclarationPattern.MatchString(n.Value) {
+		v.add(n, path, "is not a declaration digest",
+			"write sha256: followed by 64 lowercase hex digits, or null, or remove the key")
+		return
+	}
+	digest := n.Value
+	v.p.Declaration = &digest
 }
 
 // scalarIsString reports whether a scalar reaches JSON as a string, which is

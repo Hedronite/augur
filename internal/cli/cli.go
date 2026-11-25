@@ -72,17 +72,19 @@ func newRoot() *cobra.Command {
 func newEvaluate() *cobra.Command {
 	var alerts, policy, now string
 	var asJSON, quiet bool
+	var validFor int
 	cmd := &cobra.Command{
-		Use:   "evaluate --alerts FILE --policy FILE [--now RFC3339] [--json|--quiet]",
+		Use:   "evaluate --alerts FILE --policy FILE [--now RFC3339] [--valid-for SECONDS] [--json|--quiet]",
 		Short: "Classify one saved Alertmanager alert set",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runEvaluate(cmd, alerts, policy, now, asJSON, quiet)
+			return runEvaluate(cmd, alerts, policy, now, validFor, asJSON, quiet)
 		},
 	}
 	cmd.Flags().StringVar(&alerts, "alerts", "", "file holding the Alertmanager v2 /api/v2/alerts response")
 	cmd.Flags().StringVar(&policy, "policy", "", "policy file (augur.policy/v0, YAML)")
 	cmd.Flags().StringVar(&now, "now", "", "evaluation time as RFC3339; defaults to the wall clock")
+	cmd.Flags().IntVar(&validFor, "valid-for", defaultValidFor, "whole seconds the verdict stands for (valid_for), at least 1")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "print the verdict document alone on stdout")
 	cmd.Flags().BoolVar(&quiet, "quiet", false, "print nothing; only set the exit code")
 	cmd.MarkFlagsMutuallyExclusive("json", "quiet")

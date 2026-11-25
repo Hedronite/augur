@@ -123,6 +123,8 @@ func TestPolicyIsStrict(t *testing.T) {
 		"default GREEN":         func(m map[string]any) { m["default"] = "GREEN" },
 		"default missing":       func(m map[string]any) { delete(m, "default") },
 		"wrong schema id":       func(m map[string]any) { m["schema"] = "augur.policy/v9" },
+		"bad declaration":       func(m map[string]any) { m["declaration"] = "sha256:abc" },
+		"numeric declaration":   func(m map[string]any) { m["declaration"] = 7 },
 		"unknown hold kind": func(m map[string]any) {
 			m["holds"] = []any{map[string]any{"id": "x", "match": map[string]any{"port": "1"}, "kind": "nope"}}
 		},
@@ -319,6 +321,11 @@ func TestVerdictIsStrict(t *testing.T) {
 		"unknown reason code":     func(m map[string]any) { m["reasons"] = []any{"made_up_reason"} },
 		"bad overall":             func(m map[string]any) { m["overall"] = "ORANGE" },
 		"wrong apiVersion":        func(m map[string]any) { m["apiVersion"] = "augur.verdict/v9" },
+		"duration valid_for":      func(m map[string]any) { m["valid_for"] = "60s" },
+		"zero valid_for":          func(m map[string]any) { m["valid_for"] = 0 },
+		"fractional valid_for":    func(m map[string]any) { m["valid_for"] = 1.5 },
+		"string observed":         func(m map[string]any) { m["observed"] = "true" },
+		"bad declaration":         func(m map[string]any) { m["declaration"] = "sha256:abc" },
 	}
 	for name, mutate := range mutations {
 		t.Run(name, func(t *testing.T) {
@@ -331,5 +338,34 @@ func TestVerdictIsStrict(t *testing.T) {
 				t.Errorf("verdict schema accepted a verdict with %s", name)
 			}
 		})
+	}
+}
+
+// The header fields are admitted, not required: a verdict written before them
+// still validates, and a policy may declare a digest or null.
+func TestHeaderFieldsSchemaConform(t *testing.T) {
+	s := load(t)
+	var old map[string]any
+	if err := json.Unmarshal(readFile(t, "testdata", "fixtures", "10-watchdog-only", "expected.json"), &old); err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"observed", "valid_for", "declaration"} {
+		if _, ok := old[k]; !ok {
+			t.Errorf("golden verdict lacks %s", k)
+		}
+		delete(old, k)
+	}
+	if err := s.verdict.Validate(roundTrip(t, old)); err != nil {
+		t.Errorf("a verdict without the header fields must still validate: %v", err)
+	}
+	for _, value := range []any{nil, "sha256:" + strings.Repeat("d", 64)} {
+		var doc map[string]any
+		if err := yaml.Unmarshal(readFile(t, "examples", "policy.yaml"), &doc); err != nil {
+			t.Fatal(err)
+		}
+		doc["declaration"] = value
+		if err := s.policy.Validate(roundTrip(t, doc)); err != nil {
+			t.Errorf("declaration %v: %v", value, err)
+		}
 	}
 }

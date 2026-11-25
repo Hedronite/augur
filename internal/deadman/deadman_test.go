@@ -110,3 +110,19 @@ func TestClockStartsAtMaxOfStartAndLastSeen(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+// Resume carries an earlier window over and never shortens one.
+func TestResume(t *testing.T) {
+	tr := deadman.New(window, t0)
+	tr.Resume(t0.Add(time.Minute))
+	if !tr.Since().Equal(t0) {
+		t.Fatalf("Resume moved the clock later: %v", tr.Since())
+	}
+	tr.Resume(t0.Add(-4 * time.Minute))
+	if got := tr.Observe(t0.Add(time.Minute), false, true); got.Severity != model.Red {
+		t.Fatalf("%+v", got)
+	}
+	if got := tr.Observe(t0.Add(2*time.Minute), true, true); got.Severity != model.Green || !tr.Since().Equal(t0.Add(2*time.Minute)) {
+		t.Fatalf("%+v since %v", got, tr.Since())
+	}
+}

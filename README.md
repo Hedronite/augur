@@ -24,7 +24,7 @@ Augur sits beside the Simplex → Vigil → Facet triad. Vigil's `overall` is th
 
 ## The verdict document
 
-Every classification produces an `augur.verdict/v0` document — `apiVersion`, `generated_at`, `time_source`, `overall`, `policy_sha256`, top-level rollup reasons, Watchdog heartbeat state, source states, and one entry per alert with its own severity and reason codes. The contract is [`schema/verdict.v0.json`](schema/verdict.v0.json); the full reason-code table is in [`docs/reasons.md`](docs/reasons.md).
+Every classification produces an `augur.verdict/v0` document — `apiVersion`, `generated_at`, `observed`, `valid_for`, `declaration`, `time_source`, `overall`, `policy_sha256`, top-level rollup reasons, Watchdog heartbeat state, source states, and one entry per alert with its own severity and reason codes. The contract is [`schema/verdict.v0.json`](schema/verdict.v0.json); the full reason-code table is in [`docs/reasons.md`](docs/reasons.md).
 
 Short version of the rollup:
 
@@ -33,6 +33,9 @@ Short version of the rollup:
 | `watchdog_only` | GREEN | Heartbeat seen, nothing else firing. |
 | `watchdog_missing` | YELLOW | No Watchdog in the snapshot; an empty array counts as not seen. |
 | `observability_blind` | RED | Watchdog silent or a source unreachable past the dead-man window (`serve` only). |
+| `alerts_over_cap` | YELLOW | More than 4,000 alerts in one poll, none evaluated (`serve` only). |
+
+`observed` is `false` when no alert set was read and evaluated; such a verdict is never GREEN. `valid_for` is how many whole seconds the producer stands behind the document: `serve` writes twice its interval, and `evaluate` takes `--valid-for` (default 60). `declaration` is the policy's optional `declaration: sha256:<64 hex>` key copied verbatim, or null.
 
 ## Vigil fields
 
@@ -138,12 +141,12 @@ augur serve \
   [--interval 30s]
 ```
 
-- **Polling.** The first verdict is written straight away at startup, then one per interval. Every poll writes a verdict — including a failed one. A failed poll (connect error, timeout, non-200, refused redirect, an over-cap body, or a decode error) classifies an *empty* snapshot: `alerts: []`, the source `unreachable`, verdict YELLOW with `alertmanager_unreachable` and `watchdog_missing`, going RED `observability_blind` once the dead-man window passes. Old alerts are never reused as current.
+- **Polling.** The first verdict is written straight away at startup, then one per interval. Every poll writes a verdict — including a failed one. A failed poll (connect error, timeout, non-200, refused redirect, an over-cap body, or a decode error) classifies an *empty* snapshot: `alerts: []`, the source `unreachable`, verdict YELLOW with `alertmanager_unreachable` and `watchdog_missing`, going RED `observability_blind` once the dead-man window passes. Old alerts are never reused as current. A poll with more than 4,000 alerts also evaluates none: the source is `stale` and the reason is `alerts_over_cap`, not `alertmanager_unreachable`.
 - **`stale`.** A poll that succeeds but carries a Watchdog `updatedAt` older than `deadman_window` means Alertmanager is up while the alert source stopped refreshing: the source is marked `stale`, the Watchdog counts as not seen, and `alertmanager_stale` is added.
 - **The URL.** `--alertmanager` must be `http://` to a *literal* loopback address (`127.0.0.0/8` or `[::1]`). `localhost` and other names are refused on purpose: resolving a name is a trust step Augur does not need.
 - **Startup refusals (exit 5).** A non-loopback URL, an unreadable `--policy`, an unwritable `--out` directory, or an `--interval` outside 5 s–60 s (default 30 s; the bounds keep the file inside Vigil's 120 s `stale_after`). A readable but invalid policy is exit 4.
 - **The file.** Written atomically — temp file, fsync, rename, directory fsync — mode 0644, canonical `augur.verdict/v0` JSON under Vigil's 4 MiB cap, never truncated: a verdict that would not fit is an internal error (exit 6) that leaves the last file in place.
-- **Shutdown.** `SIGTERM`/`SIGINT` finish any write in progress and exit 0. A crash or panic leaves the last file untouched; Vigil ages a file that stops updating into `stale` after 120 s. There is no state file: a restart resets the dead-man clock.
+- **Shutdown.** `SIGTERM`/`SIGINT` finish any write in progress and exit 0. A crash or panic leaves the last file untouched; Vigil ages a file that stops updating into `stale` after 120 s. There is no state file: a restart carries the dead-man window over from the last verdict at `--out`.
 - **Policy.** Read once at startup; there is no reload in v0. Restart to pick up a new policy. `SIGHUP` is logged and ignored.
 - **Logs.** `log/slog` JSON on stderr: one line per poll and one per tracker state change — enum values and counts only, never label values or alert text.
 - **Deployment.** [`deploy/augur.service`](deploy/augur.service) is an example systemd unit — not installed — with generic paths and a hardened sandbox.
@@ -161,8 +164,8 @@ Contributions follow the DCO; see [CONTRIBUTING.md](CONTRIBUTING.md) for the wor
 v0 promises nothing beyond the versioned documents. `augur.verdict/v0`,
 `augur.policy/v0` and `augur.vigil-block/v0` change only **additively** within
 v0: a field may be added, and is never removed, renamed, re-typed or given a
-new meaning. The exit codes and the reason codes are frozen for v0. Anything
-else — the CLI surface, defaults, this documentation — can change in any
+new meaning. The exit codes are frozen for v0; reason codes are only ever
+added. Anything else — the CLI surface, defaults, this documentation — can change in any
 release.
 
 ## License

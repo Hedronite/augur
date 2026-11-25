@@ -110,11 +110,16 @@ func (a *am) watchdog(ago time.Duration) string {
 }
 
 type verdictDoc struct {
-	Overall    string   `json:"overall"`
-	Reasons    []string `json:"reasons"`
-	TimeSource string   `json:"time_source"`
-	Watchdog   struct {
-		Seen bool `json:"seen"`
+	GeneratedAt string          `json:"generated_at"`
+	Observed    *bool           `json:"observed"`
+	ValidFor    json.RawMessage `json:"valid_for"`
+	Declaration json.RawMessage `json:"declaration"`
+	Overall     string          `json:"overall"`
+	Reasons     []string        `json:"reasons"`
+	TimeSource  string          `json:"time_source"`
+	Watchdog    struct {
+		Seen         bool    `json:"seen"`
+		DeadmanSince *string `json:"deadman_since"`
 	} `json:"watchdog"`
 	Sources []struct {
 		ID         string  `json:"id"`
@@ -380,13 +385,6 @@ func TestFailedPollKinds(t *testing.T) {
 	for i := range big {
 		big[i] = ' '
 	}
-	tooMany := func() []string {
-		out := make([]string, MaxAlerts+1)
-		for i := range out {
-			out[i] = fmt.Sprintf(`{"labels":{"alertname":"A%d"},"startsAt":"2025-12-01T00:00:00Z","endsAt":"0001-01-01T00:00:00Z","updatedAt":"2026-01-15T12:00:00Z","fingerprint":"f","status":{"state":"active"}}`, i)
-		}
-		return out
-	}
 	cases := []struct {
 		name    string
 		handler func(w http.ResponseWriter, r *http.Request)
@@ -401,16 +399,14 @@ func TestFailedPollKinds(t *testing.T) {
 		}, KindTooLarge},
 		{"not JSON", func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "<html>proxy error</html>") }, KindDecode},
 		{"webhook payload", func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, `{"version":"4","alerts":[]}`) }, KindDecode},
-		{"too many alerts", func(w http.ResponseWriter, _ *http.Request) {
-			_, _ = io.WriteString(w, "["+strings.Join(tooMany(), ",")+"]")
-		}, KindTooMany},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			h := startHarness(t, nil)
 			h.am.set(c.handler)
 			v := h.tick(10 * time.Second)
-			if v.Overall != "YELLOW" || v.Sources[0].State != "unreachable" || !has(v.Reasons, "alertmanager_unreachable") || len(v.Alerts) != 0 {
+			if v.Overall != "YELLOW" || v.Sources[0].State != "unreachable" || !has(v.Reasons, "alertmanager_unreachable") || len(v.Alerts) != 0 ||
+				v.Observed == nil || *v.Observed {
 				t.Fatalf("%+v", v)
 			}
 			if !strings.Contains(h.logs.String(), `"error_kind":"`+c.kind+`"`) {

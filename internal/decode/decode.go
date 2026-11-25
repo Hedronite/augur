@@ -46,7 +46,11 @@ func (e *ErrUnsupported) Error() string { return "unsupported_payload: " + strin
 // ErrMalformed reports input that is not a valid Alertmanager v2 array
 // (exit 3, code invalid_input). Detail is a short, bounded phrase: it names a
 // field path and never echoes a label value.
-type ErrMalformed struct{ Detail string }
+type ErrMalformed struct {
+	Detail string
+	// TooMany marks a document refused only for holding more than MaxAlerts.
+	TooMany bool
+}
 
 // Error implements error.
 func (e *ErrMalformed) Error() string { return "invalid_input: " + e.Detail }
@@ -178,7 +182,7 @@ func DecodeAM(data []byte) (model.Snapshot, error) {
 		return model.Snapshot{}, &ErrMalformed{Detail: "malformed JSON"}
 	}
 	if len(raw) > MaxAlerts {
-		return model.Snapshot{}, &ErrMalformed{Detail: "too many alerts"}
+		return model.Snapshot{}, &ErrMalformed{Detail: "too many alerts", TooMany: true}
 	}
 
 	alerts := make([]model.Alert, 0, len(raw))

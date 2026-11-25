@@ -27,6 +27,20 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
       "description": "RFC3339 UTC instant at which the verdict was produced."
     },
+    "observed": {
+      "type": "boolean",
+      "description": "false when no alert set was read and evaluated: Alertmanager unreachable, the poll failed, or alerts_over_cap. Such a verdict is never GREEN, and its colour is a statement about Augur's own sight."
+    },
+    "valid_for": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "How long the producer stands behind the document, in whole seconds. serve: twice --interval, rounded down; evaluate: --valid-for, default 60."
+    },
+    "declaration": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "The policy's declaration key copied verbatim, or null when undeclared."
+    },
     "time_source": {
       "enum": ["flag", "wall"],
       "description": "flag: an explicit --now was supplied; wall: the process clock (evaluate without --now, or serve's injected clock). The engine itself never reads a clock."
@@ -57,6 +71,12 @@
           "format": "date-time",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
           "description": "updatedAt of the Watchdog alert, RFC3339 UTC, or null when not seen. A silenced Watchdog still counts as a heartbeat."
+        },
+        "deadman_since": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+          "description": "serve only, present only while the heartbeat is not current: the instant the dead-man window counts from. A restart resumes the window from it."
         }
       }
     },
@@ -83,7 +103,12 @@
         "alert_clock_skew",
         "alertmanager_stale",
         "alertmanager_unreachable",
+        "alerts_over_cap",
         "announced_dark_expired",
+        "escalate_both_views",
+        "escalate_single_view",
+        "escalate_views_split",
+        "escalate_within_hold",
         "evaluation_clock_backwards",
         "heartbeat",
         "held_announced_dark",
@@ -123,7 +148,7 @@
         },
         "state": {
           "enum": ["ok", "unreachable", "stale"],
-          "description": "ok: reached this cycle; unreachable: could not be reached; stale: reached but not producing current data."
+          "description": "ok: reached this cycle; unreachable: could not be reached; stale: reached but not producing current data, including a poll over the alert cap (alerts_over_cap)."
         },
         "last_ok": {
           "type": ["string", "null"],

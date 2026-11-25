@@ -81,6 +81,7 @@ func Run(ctx context.Context, cfg Config, d Deps) error {
 		s.timeout = cfg.Timeout
 	}
 	s.userAgent = "augur/" + cfg.Version
+	s.resumeDeadman()
 
 	if removed, err := CleanStrayTemp(filepath.Dir(cfg.Out)); err != nil {
 		d.Logger.Warn("cleanup", "kind", "cannot_list_directory")
@@ -180,10 +181,17 @@ func (s *server) poll(ctx context.Context) error {
 // verdict builds the verdict for one poll.
 func (s *server) verdict(snap model.Snapshot, failKind string, now time.Time) model.Verdict {
 	pol := s.cfg.Policy
+	overCap := failKind == KindTooMany
 	if failKind != "" {
 		// A failed poll never reuses an earlier snapshot's alerts.
 		snap = model.Snapshot{Alerts: nil}
 		snap.State = model.SourceUnreachable
+		if overCap {
+			// The source answered, so it is not unreachable; it gave nothing
+			// that can be used.
+			snap.State = model.SourceStale
+			snap.OverCap = true
+		}
 		snap.LastOK = s.lastOK
 	} else {
 		snap.State = model.SourceOK
@@ -203,12 +211,38 @@ func (s *server) verdict(snap model.Snapshot, failKind string, now time.Time) mo
 
 	v := engine.Evaluate(snap, pol, now)
 	v.TimeSource = model.TimeWall
+	v.ValidFor = validFor(s.cfg.Interval)
 	v.Sources[0].AlertCount = total // the count read, not the count kept
 
 	sourceOK := failKind == ""
 	st := s.tracker.Observe(now, v.Watchdog.Seen, sourceOK)
+	if overCap {
+		// The tracker only knows the poll gave no heartbeat; the engine has
+		// already named why, and it was not an unreachable source.
+		st.Reasons = without(st.Reasons, model.ReasonAlertmanagerUnreachable)
+	}
+	if !v.Watchdog.Seen || !sourceOK {
+		since := s.tracker.Since().UTC()
+		v.Watchdog.DeadmanSince = &since
+	}
 	s.logTracker(st)
 	return MergeDeadman(v, st)
+}
+
+// validFor is twice the interval in whole seconds, rounded down so the promise
+// is never longer than that, and at least 1.
+func validFor(interval time.Duration) int {
+	return int(max(2*interval/time.Second, 1))
+}
+
+func without(rs []model.Reason, drop model.Reason) []model.Reason {
+	out := make([]model.Reason, 0, len(rs))
+	for _, r := range rs {
+		if r != drop {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 func (s *server) logTracker(st deadman.State) {

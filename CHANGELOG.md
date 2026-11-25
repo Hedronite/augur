@@ -8,6 +8,30 @@ and fails if the section is missing.
 
 ## [Unreleased]
 
+A consumer that validates verdicts or the `augur{}` block against a pinned
+schema must refresh it before taking this release: both reason enums grew and
+the verdict has new fields.
+
+### Added
+
+- Verdicts carry `observed`, `valid_for` and `declaration`. The policy takes
+  an optional `declaration: sha256:<64 hex>` (or null), and `evaluate` takes
+  `--valid-for SECONDS` (default 60).
+- Reason codes `alerts_over_cap` and `escalate_within_hold`,
+  `escalate_single_view`, `escalate_both_views`, `escalate_views_split`.
+- `watchdog.deadman_since`, written by `serve` while the heartbeat is not
+  current.
+
+### Fixed
+
+- A poll with more than 4,000 alerts was reported as
+  `alertmanager_unreachable`. It is now `alerts_over_cap` with the source
+  `stale`; no alerts are evaluated and the verdict is never GREEN.
+- A restart of `serve` reset the dead-man window. It now carries over from the
+  last verdict at `--out`.
+- Escalating rules on alerts other than `NodeExporterDown` reported
+  `node_exporter_*` codes. They now report `escalate_*`.
+
 ## [0.1.1] - 2026-11-14
 
 The first published release. The program is unchanged from the unpublished

@@ -55,6 +55,9 @@ const (
 	ReasonAlertmanagerUnreachable  Reason = "alertmanager_unreachable"
 	ReasonAlertmanagerStale        Reason = "alertmanager_stale"
 	ReasonEvaluationClockBackwards Reason = "evaluation_clock_backwards"
+	// ReasonAlertsOverCap: serve read more alerts than one poll may carry and
+	// evaluated none of them.
+	ReasonAlertsOverCap Reason = "alerts_over_cap"
 )
 
 // Per-alert reasons.
@@ -74,6 +77,12 @@ const (
 	ReasonNodeExporterViewsSplit Reason = "node_exporter_views_split"
 	ReasonAlertClockSkew         Reason = "alert_clock_skew"
 	ReasonUnmappedHost           Reason = "unmapped_host"
+	// Escalation codes for every alert other than NodeExporterDown, which
+	// keeps the node_exporter_* codes above.
+	ReasonEscalateWithinHold Reason = "escalate_within_hold"
+	ReasonEscalateSingleView Reason = "escalate_single_view"
+	ReasonEscalateBothViews  Reason = "escalate_both_views"
+	ReasonEscalateViewsSplit Reason = "escalate_views_split"
 )
 
 // AllReasons returns every reason code, sorted. It is the Go side of the
@@ -88,6 +97,8 @@ func AllReasons() []Reason {
 		ReasonNodeExporterWithinHold, ReasonNodeExporterSingleView,
 		ReasonNodeExporterBothViews, ReasonNodeExporterViewsSplit,
 		ReasonAlertClockSkew, ReasonEvaluationClockBackwards, ReasonUnmappedHost,
+		ReasonAlertsOverCap, ReasonEscalateWithinHold, ReasonEscalateSingleView,
+		ReasonEscalateBothViews, ReasonEscalateViewsSplit,
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i] < all[j] })
 	return all
@@ -104,6 +115,8 @@ var (
 	SlugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,31}$`)
 	// IDPattern bounds a policy rule or hold id.
 	IDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,63}$`)
+	// DeclarationPattern bounds the policy's declaration digest.
+	DeclarationPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 )
 
 // Literals reported in place of a value that fails its bound.
@@ -165,6 +178,9 @@ type Snapshot struct {
 	State    SourceState // ok, unreachable or stale
 	LastOK   *time.Time  // nil when never ok
 	Alerts   []Alert     // nil or empty counts as "Watchdog not seen"
+	// OverCap marks a poll that read more alerts than it may carry. The source
+	// answered, but none of its alerts are evaluated.
+	OverCap bool
 }
 
 // Matcher matches one label value: equality, or an anchored regex.
@@ -261,7 +277,8 @@ type Policy struct {
 	FirstClassHosts     []string
 	Rules               []Rule
 	Holds               []Hold
-	SHA256              string // lowercase hex of the exact policy bytes, set by the parser
+	SHA256              string  // lowercase hex of the exact policy bytes, set by the parser
+	Declaration         *string // the optional declaration digest, copied into every verdict
 }
 
 // FieldError is one problem in an input file, in the form the renderers need:
@@ -278,9 +295,16 @@ type FieldError struct {
 // Verdict is the verdict document. render.JSON owns the canonical byte form;
 // the engine fills the struct with every slice already sorted and never nil.
 type Verdict struct {
-	APIVersion   string
-	GeneratedAt  time.Time
-	TimeSource   string // "flag" or "wall"; set by the caller, the engine never reads a clock
+	APIVersion  string
+	GeneratedAt time.Time
+	TimeSource  string // "flag" or "wall"; set by the caller, the engine never reads a clock
+	// Observed is false when no alert set was read and evaluated. Such a
+	// verdict is never GREEN.
+	Observed bool
+	// ValidFor is how many seconds the producer stands behind the document, at
+	// least 1; set by the caller.
+	ValidFor     int
+	Declaration  *string // from the policy; nil when undeclared
 	Overall      Severity
 	PolicySHA256 string
 	Reasons      []Reason
@@ -302,6 +326,10 @@ const (
 type WatchdogState struct {
 	Seen     bool
 	LastSeen *time.Time // nil when not seen
+	// DeadmanSince is the instant serve's dead-man window counts from. It is
+	// set only while the heartbeat is not current, so that a restart can carry
+	// the window on from the last verdict; nil otherwise.
+	DeadmanSince *time.Time
 }
 
 // Source is one entry of the verdict's sources array.

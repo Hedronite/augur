@@ -30,10 +30,22 @@ type Tracker struct {
 }
 
 // New returns a Tracker whose blind window is window and whose clock starts
-// at start. There is no state file: a restart resets it.
+// at start. There is no state file: a caller that has an earlier verdict
+// carries the window over with Resume.
 func New(window time.Duration, start time.Time) *Tracker {
 	return &Tracker{window: window, clock: start}
 }
+
+// Resume moves the clock back to since, the instant an earlier run was
+// counting from. It never moves the clock later.
+func (t *Tracker) Resume(since time.Time) {
+	if since.Before(t.clock) {
+		t.clock = since
+	}
+}
+
+// Since is the instant the window counts from.
+func (t *Tracker) Since() time.Time { return t.clock }
 
 // Observe records one poll and returns the resulting state.
 //

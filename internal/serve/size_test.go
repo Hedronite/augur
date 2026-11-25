@@ -19,6 +19,7 @@ func TestVerdictFitsAtMaxAlerts(t *testing.T) {
 	sev := strings.Repeat("s", 32)
 	rule := strings.Repeat("r", 64)
 	reasons := model.AllReasons()
+	declaration := "sha256:" + strings.Repeat("0", 64)
 	// The eight longest codes: more reasons than any alert can carry at once.
 	longest := append([]model.Reason(nil), reasons...)
 	for i := range longest {
@@ -31,8 +32,9 @@ func TestVerdictFitsAtMaxAlerts(t *testing.T) {
 	at := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
 	v := model.Verdict{
 		APIVersion: model.VerdictAPIVersion, GeneratedAt: at, TimeSource: model.TimeWall, Overall: model.Red,
+		Observed: false, ValidFor: 1 << 62, Declaration: &declaration,
 		PolicySHA256: strings.Repeat("0", 64), Reasons: model.AllReasons(),
-		Watchdog: model.WatchdogState{Seen: true, LastSeen: &at},
+		Watchdog: model.WatchdogState{Seen: true, LastSeen: &at, DeadmanSince: &at},
 		Sources:  []model.Source{{ID: SourceID, State: model.SourceOK, LastOK: &at, AlertCount: MaxAlerts}},
 	}
 	for i := 0; i < MaxAlerts; i++ {

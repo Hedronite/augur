@@ -8,6 +8,11 @@
   "required": ["schema", "default", "watchdog", "rules"],
   "properties": {
     "schema": { "const": "augur.policy/v0" },
+    "declaration": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Optional digest of the watch declaration that produced this policy. Copied verbatim into every verdict; omitted or null means undeclared."
+    },
     "default": {
       "enum": ["YELLOW", "RED"],
       "description": "Applied to any alert no rule matches. GREEN is rejected."

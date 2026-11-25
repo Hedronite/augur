@@ -1,6 +1,9 @@
 {
   "apiVersion": "augur.verdict/v0",
   "generated_at": "2026-01-15T12:00:00Z",
+  "observed": true,
+  "valid_for": 60,
+  "declaration": null,
   "time_source": "flag",
   "overall": "YELLOW",
   "policy_sha256": "b7f1fe1bbea7192242367d18b20f37b7ccd2770678506c4845345277ff6ec048",
