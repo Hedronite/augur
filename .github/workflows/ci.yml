@@ -139,6 +139,16 @@ jobs:
           python3 -I src-one/scripts/sbomtool.py selftest
           python3 -I src-one/scripts/sbomtool.py accept "$RUNNER_TEMP"/out-one/augur_*.sbom.cdx.json "$RUNNER_TEMP"/out-two/augur_*.sbom.cdx.json
 
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Vendored files match their recorded digest and their upstream commit.
+      - run: bash scripts/check-vendor.sh
+
   scrub:
     runs-on: ubuntu-latest
     timeout-minutes: 10

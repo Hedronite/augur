@@ -9,9 +9,9 @@ SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct 2>/dev/null)
 export SOURCE_DATE_EPOCH
 LDFLAGS := -s -w -buildid= -X github.com/Hedronite/augur/internal/cli.version=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: gate build release sbom release-check fmt-check tidy-check vet lint test race soak conformance vuln scrub scrub-selftest secrets clean
+.PHONY: gate build release sbom release-check fmt-check tidy-check vet lint test race soak conformance vuln scrub scrub-selftest secrets check-vendor clean
 
-gate: fmt-check tidy-check vet lint race soak conformance vuln scrub scrub-selftest secrets ## everything CI runs, locally
+gate: fmt-check tidy-check vet lint race soak conformance vuln scrub scrub-selftest secrets check-vendor ## everything CI runs, locally
 
 build:
 	$(GO) build -trimpath -buildvcs=false -ldflags '$(LDFLAGS)' -o augur ./cmd/augur
@@ -60,6 +60,9 @@ scrub:
 
 scrub-selftest:
 	scripts/scrub.sh --self-test
+
+check-vendor: ## vendored files match SOURCE and the upstream commit (needs network)
+	scripts/check-vendor.sh
 
 secrets:
 	gitleaks git --no-banner --redact .

@@ -66,7 +66,7 @@ To check a private denylist, set `AUGUR_SCRUB_EXTRA` to newline-separated extend
 
 ## Vendored Vigil contract
 
-The block schema and the mapping goldens under `testdata/vigil/` are vendored into Vigil byte for byte at a pinned commit. When Vigil's side of the contract changes, refresh the vendored files (`testdata/vigil/vendor/`, whose `SOURCE` file names the pinned commit), update the goldens together with [`docs/vigil.md`](docs/vigil.md), and land the refresh as its own commit so the pin is reviewable.
+The block schema and the mapping goldens under `testdata/vigil/` are vendored into Vigil byte for byte at a pinned commit. When Vigil's side of the contract changes, refresh the vendored files (`testdata/vigil/vendor/`, whose `SOURCE` file names the pinned commit), update the goldens together with [`docs/vigil.md`](docs/vigil.md), and land the refresh as its own commit so the pin is reviewable. `scripts/check-vendor.sh` (also a CI job) checks each vendored file against the sha256 in `SOURCE` and against the bytes at that upstream commit; `--offline` skips only the upstream half, and never in CI.
 
 ## License
 
