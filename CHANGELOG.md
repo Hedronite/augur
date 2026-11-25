@@ -8,6 +8,8 @@ and fails if the section is missing.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-25
+
 A consumer that validates verdicts or the `augur{}` block against a pinned
 schema must refresh it before taking this release: both reason enums grew and
 the verdict has new fields.
@@ -28,9 +30,16 @@ the verdict has new fields.
   `alertmanager_unreachable`. It is now `alerts_over_cap` with the source
   `stale`; no alerts are evaluated and the verdict is never GREEN.
 - A restart of `serve` reset the dead-man window. It now carries over from the
-  last verdict at `--out`.
+  last verdict at `--out`. Time spent stopped counts, so a start long after the
+  last verdict is RED on its first poll unless that poll sees the heartbeat.
 - Escalating rules on alerts other than `NodeExporterDown` reported
   `node_exporter_*` codes. They now report `escalate_*`.
+
+### Changed
+
+- CI: `scripts/check-vendor.sh` runs as a `vendor` job and in `make gate`. It
+  checks each vendored file against the sha256 in `SOURCE` and against the
+  bytes at the recorded upstream commit.
 
 ## [0.1.1] - 2026-11-14
 
