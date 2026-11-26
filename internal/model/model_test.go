@@ -67,17 +67,18 @@ func TestResolveSlug(t *testing.T) {
 	}
 }
 
-// Vigil's contract (Hedronite/vigil 44dfb0b, schema/vigil.summary.v0.schema.json
-// and docs/semantics.md section 4). A3b vendors the schema itself; until then
-// these are copied here, and the tests below fail if our side drifts.
+// Vigil's contract (Hedronite/vigil 5a7d7d1, schema/vigil.summary.v0.schema.json
+// and docs/semantics.md section 4). The schema is vendored under
+// testdata/vigil/vendor; these are copies from that commit, and the tests below
+// fail if our side drifts from them.
 const (
 	vigilReasonPattern = `^[a-z][a-z0-9_]{0,47}$`
-	vigilSlugPattern   = `^[a-z0-9][a-z0-9\-]{0,31}$`
+	vigilSlugPattern   = `^[a-z][a-z0-9\-]{0,31}$`
 )
 
-var vigilOwnReasons = []string{"source_stale", "source_unavailable", "schema_major", "clock_skew", "authority_unavailable"}
+var vigilOwnReasons = []string{"source_stale", "source_unavailable", "schema_major", "clock_skew", "authority_unavailable", "declaration_drift"}
 
-// No Augur code may equal one of Vigil's five: Vigil concatenates its own codes
+// No Augur code may equal one of Vigil's own: Vigil concatenates its own codes
 // and an authority's into one flat verdicts[].reasons, so a shared string would
 // be ambiguous.
 func TestNoReasonCollidesWithVigil(t *testing.T) {
@@ -100,16 +101,22 @@ func TestEveryReasonFitsVigilsPattern(t *testing.T) {
 	}
 }
 
-// Our slug is exactly Vigil's, so a host or replica in the verdict can never
-// fail Vigil's slug check (no leading dash, at most 32 characters).
-func TestSlugEqualsVigilsSlug(t *testing.T) {
-	// Vigil writes the hyphen escaped inside the class; ours does not.
-	if got, want := strings.ReplaceAll(model.SlugPattern.String(), `\-`, `-`), strings.ReplaceAll(vigilSlugPattern, `\-`, `-`); got != want {
-		t.Fatalf("slug pattern %s differs from Vigil's %s", got, want)
-	}
-	for in, ok := range map[string]bool{"-host": false, "host-": true, "host--a": true, "-": false, "a": true, strings.Repeat("a", 32): true, strings.Repeat("a", 33): false} {
+// Our slug is Vigil's with one allowance: it may start with a digit, where
+// Vigil's starts with a letter. Hosts and replicas travel in augur{}, which
+// Vigil's schema does not hold to its slug, so no verdict is refused for it.
+// Either side moving fails here.
+func TestSlugAgainstVigilsSlug(t *testing.T) {
+	vigil := regexp.MustCompile(vigilSlugPattern)
+	for in, ok := range map[string]bool{
+		"-host": false, "host-": true, "host--a": true, "-": false, "a": true, "9host": true, "0": true,
+		strings.Repeat("a", 32): true, strings.Repeat("a", 33): false,
+	} {
 		if _, matched := model.ResolveSlug(in); matched != ok {
 			t.Errorf("ResolveSlug(%q) matched=%v, want %v", in, matched, ok)
+		}
+		leadingDigit := in != "" && in[0] >= '0' && in[0] <= '9'
+		if got, want := vigil.MatchString(in), ok && !leadingDigit; got != want {
+			t.Errorf("Vigil slug match for %q = %v, want %v", in, got, want)
 		}
 	}
 }
