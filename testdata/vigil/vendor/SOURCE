@@ -1,7 +1,7 @@
 repository: Hedronite/vigil
-commit: 5a7d7d151a9c9cce4c07590ed0956e6e2f47dad4
+commit: 3b0926db346680a73d5c436be2a3987d717b4619
 path: schema/vigil.summary.v0.schema.json
-sha256: 163f1b9c45b4865d9964cc777bc68e0ea2eac5eeb5ca3bd9a80635f5a276da0e
+sha256: c556be29308b5669d57e92c1197293b9414be7aa36631ce45b9348c62b9f563b
 
 A pinned, unmodified copy of Vigil's summary schema. The conformance test in
 internal/vigilmap validates every golden against it and checks the digest above.
