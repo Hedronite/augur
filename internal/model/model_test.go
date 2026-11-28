@@ -67,7 +67,7 @@ func TestResolveSlug(t *testing.T) {
 	}
 }
 
-// Vigil's contract (Hedronite/vigil 5a7d7d1, schema/vigil.summary.v0.schema.json
+// Vigil's contract (Hedronite/vigil 3b0926d, schema/vigil.summary.v0.schema.json
 // and docs/semantics.md section 4). The schema is vendored under
 // testdata/vigil/vendor; these are copies from that commit, and the tests below
 // fail if our side drifts from them.
